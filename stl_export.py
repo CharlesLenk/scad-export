@@ -25,9 +25,9 @@ def generate_part(export_config, output_directory, folder, part):
     os.makedirs(output_directory, exist_ok=True)
 
     args = [
-        export_config.openSCADLocation,
+        export_config.openScadLocation,
         '-o' + output_directory + part_file_name,
-        export_config.exportFilePath
+        export_config.exportMapFile
     ]
 
     for arg, value in part[1].items():
