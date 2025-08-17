@@ -3,18 +3,17 @@ import shutil
 import platform
 import os
 import sys
-from functools import cache
 from subprocess import Popen, PIPE
 from pathlib import PurePath
 
 conf_file_name = 'export config.json'
-default_export_file_name = 'export map.scad'
-default_parts_file_name = 'export parts.json'
+default_export_map_file_name = 'export map.scad'
+default_export_parts_config_name = 'export parts.json'
 
-openSCADLocationName = 'openSCADLocation'
+openScadLocationName = 'openScadLocation'
 projectRootName = 'projectRoot'
-exportFilePathName = 'exportFilePath'
-exportPartsFilePathName = 'exportPartsFilePath'
+exportMapFileName = 'exportMapFile'
+exportPartsConfigName = 'exportPartsConfig'
 stlOutputDirectoryName = 'stlOutputDirectory'
 
 def is_openscad_location_valid(location):
@@ -30,6 +29,9 @@ def get_file_path(search_directory, file_name):
 
 def is_file_with_extension(file_name, extension, search_directory):
     return file_name.lower().endswith(extension) and get_file_path(search_directory, file_name) is not None
+
+def get_working_directory():
+    return str(PurePath(__file__).parents[0])
 
 def yes_no_prompt(message):
     valid_inputs = ('y', 'n')
@@ -58,17 +60,32 @@ def reprompt(validation_func, input_name, default, extra_validate_args = []):
     return input_value
 
 def _get_project_root():
-    process = Popen(['git', 'rev-parse', '--show-superproject-working-tree'], cwd=str(PurePath(__file__).parents[1]), stdout=PIPE, stderr=PIPE)
+    process = Popen(
+        ['git', 'rev-parse', '--show-superproject-working-tree'], 
+        cwd=get_working_directory(), 
+        stdout=PIPE, 
+        stderr=PIPE
+    )
     project_root, err = process.communicate()
     project_root = str(project_root, encoding='UTF-8').strip()
     return reprompt(os.path.isdir, 'project root folder', project_root)
 
 def _get_export_file_path(search_directory):
-    export_file_name = reprompt(is_file_with_extension, 'export file (.scad)', default_export_file_name, ['.scad', search_directory])
+    export_file_name = reprompt(
+        is_file_with_extension,
+        'export map file (.scad)',
+        default_export_map_file_name,
+        ['.scad', search_directory]
+    )
     return get_file_path(search_directory, export_file_name)
 
 def _get_export_parts_file(search_directory):
-    export_parts_file_name = reprompt(is_file_with_extension, 'exports parts definition (.json)', default_parts_file_name, ['.json', search_directory])
+    export_parts_file_name = reprompt(
+        is_file_with_extension,
+        'exports parts config (.json)',
+        default_export_parts_config_name,
+        ['.json', search_directory]
+    )
     return get_file_path(search_directory, export_parts_file_name)
 
 def _get_openscad_location():
@@ -103,46 +120,46 @@ class ExportConfig:
     def persist(self):
         config = {}
 
-        config[openSCADLocationName] = self.openSCADLocation
+        config[openScadLocationName] = self.openScadLocation
         config[projectRootName] = self.projectRoot
-        config[exportFilePathName] = self.exportFilePath
-        config[exportPartsFilePathName] = self.exportPartsFilePath
+        config[exportMapFileName] = self.exportMapFile
+        config[exportPartsConfigName] = self.exportPartsConfig
         config[stlOutputDirectoryName] = self.stlOutputDirectory
-        conf_file = os.path.join(PurePath(__file__).parents[0], conf_file_name) 
+        conf_file = os.path.join(get_working_directory(), conf_file_name) 
         with open(conf_file, 'w') as file:
             json.dump(config, file, indent=2)
 
     def validate(self):
-        if not is_openscad_location_valid(self.openSCADLocation):
-            self.openSCADLocation = _get_openscad_location()
+        if not is_openscad_location_valid(self.openScadLocation):
+            self.openScadLocation = _get_openscad_location()
             self.persist()
         if not os.path.isdir(self.projectRoot):
             self.projectRoot = _get_project_root()
             self.persist()
-        if not os.path.isfile(self.exportFilePath):
-            self.exportFilePath = _get_export_file_path(self.projectRoot)
+        if not os.path.isfile(self.exportMapFile):
+            self.exportMapFile = _get_export_file_path(self.projectRoot)
             self.persist()
-        if not os.path.isfile(self.exportPartsFilePath):
-            self.exportPartsFilePath = _get_export_parts_file(self.projectRoot)
+        if not os.path.isfile(self.exportPartsConfig):
+            self.exportPartsConfig = _get_export_parts_file(self.projectRoot)
             self.persist()
         if not is_path_writable(self.stlOutputDirectory):
             self.stlOutputDirectory = _get_stl_output_directory()
             self.persist()
     
     def __init__(self):
-        conf_file = os.path.join(PurePath(__file__).parents[0], conf_file_name)
+        conf_file = os.path.join(get_working_directory(), conf_file_name)
         config = {}
         if os.path.isfile(conf_file):
             with open(conf_file, 'r') as file:
                 config = json.load(file)
 
-        self.openSCADLocation = config.get(openSCADLocationName, '')
+        self.openScadLocation = config.get(openScadLocationName, '')
         self.projectRoot = config.get(projectRootName, '')
-        self.exportFilePath = config.get(exportFilePathName, '')
-        self.exportPartsFilePath = config.get(exportPartsFilePathName, '')
+        self.exportMapFile = config.get(exportMapFileName, '')
+        self.exportPartsConfig = config.get(exportPartsConfigName, '')
         self.stlOutputDirectory = config.get(stlOutputDirectoryName, '')
         self.validate()
 
-        self.manifoldSupport = _get_manifold_support(self.openSCADLocation)
-        with open(self.exportPartsFilePath, 'r') as file:
+        self.manifoldSupport = _get_manifold_support(self.openScadLocation)
+        with open(self.exportPartsConfig, 'r') as file:
             self.partsMap = json.load(file)
