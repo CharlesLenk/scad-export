@@ -54,15 +54,17 @@ def generate_part(export_config, output_directory, folder, part):
         output += 'Failed to generate: ' + folder + '/' + part_file_name + ', Error: ' + str(err)
     return output
 
-def print_parts(part_map):
+def print_parts():
     export_config = ExportConfig()
     with ThreadPoolExecutor(max_workers = os.cpu_count()) as executor:
         print('Starting STL generation')
         futures = []
-        for folder, part_group in flatten_to_folders_and_parts(part_map).items():
+        for folder, part_group in flatten_to_folders_and_parts(export_config.partsMap).items():
             output_directory = export_config.stlOutputDirectory + folder + '/'
             for part in part_group.items():
                 futures.append(executor.submit(generate_part, export_config, output_directory, folder, part))
         for future in futures:
             print(future.result())
         print('Done!')
+
+print_parts()
