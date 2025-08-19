@@ -65,8 +65,7 @@ def _get_project_root():
         stdout=PIPE,
         stderr=PIPE
     )
-    project_root, err = process.communicate()
-    print(err)
+    project_root, _ = process.communicate()
     project_root = str(project_root, encoding='UTF-8').strip()
     return reprompt(os.path.isdir, 'project root folder', project_root)
 
