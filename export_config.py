@@ -186,3 +186,6 @@ class ExportConfig:
     def get_manifold_support(self):
         with self.manifold_support_lock:
             return self._get_manifold_support()
+
+    def get_naming_strategy(self):
+        return 'spaces'

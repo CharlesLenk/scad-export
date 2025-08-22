@@ -3,40 +3,31 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import Popen, PIPE
 from .export_config import ExportConfig
-from numbers import Number
+from .part import Part, Folder
 
 def is_part_definition(dictionary):
     return all(not isinstance(value, dict) for value in dictionary.values())
 
-def flatten_to_folders_and_parts(parts, current_path = ''):
-    folders_and_parts = {}
-    for key, value in parts.items():
-        if is_part_definition(value):
-            folders_and_parts.setdefault(current_path, {}).update({ key: value })
-        else:
-            folders_and_parts.update(flatten_to_folders_and_parts(value, current_path + '/' + key))
+def flatten_to_folders_and_parts(item, current_path = '', folders_and_parts = {}):
+    if isinstance(item, Part):
+        folders_and_parts.setdefault(current_path, []).append(item)
+    elif isinstance(item, Folder):
+        for subitem in item.contents:
+            folders_and_parts.update(flatten_to_folders_and_parts(subitem, current_path + '/' + item.name, folders_and_parts))
     return folders_and_parts
 
-def generate_part_stl(config, output_directory, folder, part):
-    part_name = part[0]
-    part_args = part[1]
-    part_file_name = part_name + '.stl'
+def generate_part_stl(config: ExportConfig, output_directory, folder, part: Part):
+    part_file_name = part.file_name + '.stl'
 
     os.makedirs(output_directory, exist_ok=True)
 
     args = [
-        config.openScadLocation,
+        config.get_openscad_location(),
         '-o' + output_directory + part_file_name,
-        config.exportMapFile
-    ]
+        config.get_export_file_path()
+    ] + part.get_additional_args()
 
-    for arg, value in part_args.items():
-        if isinstance(value, Number) and arg != 'quantity':
-            args.append('-D' + arg + '=' + str(value))
-        elif isinstance(value, str):
-            args.append('-D' + arg + '="' + value + '"')
-
-    if config.manifoldSupport:
+    if config.get_manifold_support():
         args.append('--enable=manifold')
 
     process = Popen(args, stdout=PIPE, stderr=PIPE)
@@ -44,24 +35,24 @@ def generate_part_stl(config, output_directory, folder, part):
 
     output = ""
     if (process.returncode == 0):
-        output = 'Finished generating: ' + folder + '/' + part_file_name
-        count = part_args.get('quantity', 1)
+        output = 'Finished generating: ' + folder + '/' + part.file_name
+        count = part.quantity
         for count in range(2, count + 1):
-            part_copy_name = part_name + '_' + str(count) + '.stl'
+            part_copy_name = part.file_name + '_' + str(count) + '.stl'
             shutil.copy(output_directory + part_file_name, output_directory + part_copy_name)
             output += '\nFinished generating: ' + folder + '/' + part_copy_name
     else:
-        output = 'Failed to generate: ' + folder + '/' + part_file_name + ', Error: ' + str(err)
+        output = 'Failed to generate: ' + folder + '/' + part.file_name + ', Error: ' + str(err)
     return output
 
-def generate_parts(part_map, threads = os.cpu_count()):
+def generate_parts(parts, threads = os.cpu_count()):
     config = ExportConfig()
     with ThreadPoolExecutor(max_workers = threads) as executor:
         print('Starting STL generation')
         futures = []
-        for folder, part_group in flatten_to_folders_and_parts(part_map).items():
-            output_directory = config.stlOutputDirectory + folder + '/'
-            for part in part_group.items():
+        for folder, part_group in flatten_to_folders_and_parts(parts).items():
+            output_directory = config.get_stl_output_directory() + folder + '/'
+            for part in part_group:
                 futures.append(executor.submit(generate_part_stl, config, output_directory, folder, part))
         for future in futures:
             print(future.result())
