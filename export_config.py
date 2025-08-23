@@ -4,13 +4,17 @@ import platform
 import os
 import sys
 from subprocess import Popen, PIPE
-from pathlib import PurePath
 from functools import cache
 from threading import Lock
+from enum import StrEnum, auto
 
 conf_file_name = 'export config.json'
 default_export_map_file_name = 'export map.scad'
 default_export_parts_config_name = 'export parts.json'
+
+class NamingStrategy(StrEnum):
+    SPACE = auto()
+    UNDERSCORE = auto()
 
 def is_openscad_location_valid(location):
     return shutil.which(location) is not None
@@ -27,7 +31,7 @@ def is_file_with_extension(file_name, extension, search_directory):
     return file_name.lower().endswith(extension) and get_file_path(search_directory, file_name) is not None
 
 def get_working_directory():
-    return str(PurePath(__file__).parents[0])
+    return str(os.path.dirname(os.path.realpath(__file__)))
 
 def yes_no_prompt(message):
     valid_inputs = ('y', 'n')
@@ -108,14 +112,14 @@ class ExportConfig:
             validateable = Validateable(is_openscad_location_valid, 'openscad')
             if not validateable.validate():
                 if system == 'Windows':
-                    nightly_path = 'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe'
-                    if is_openscad_location_valid(nightly_path):
-                        validateable.set_value(nightly_path)
-                    else:
+                    validateable.set_value('C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe')
+                    if not validateable.validate():
                         validateable.set_value('C:\\Program Files\\OpenSCAD\\openscad.exe')
                 elif system == 'Darwin':
                     validateable.set_value('/Applications/OpenSCAD.app')
                     validateable.postfix = '/Contents/MacOS/OpenSCAD'
+                    if not validateable.validate():
+                        validateable.set_value('~/Applications/OpenSCAD.app')
             openscad_location = reprompt(validateable, 'OpenSCAD executable location')
             self.persist(self.open_scad_location_name, openscad_location)
         return self.config.get(self.open_scad_location_name)
@@ -136,6 +140,8 @@ class ExportConfig:
             )
             project_root, _ = process.communicate()
             project_root = str(project_root, encoding='UTF-8').strip()
+            if not project_root:
+                project_root = os.path.dirname(get_working_directory())
             project_root = reprompt(Validateable(os.path.isdir, project_root), 'project root folder')
             self.persist(self.project_root_name, project_root)
         return self.config.get(self.project_root_name)
@@ -187,5 +193,6 @@ class ExportConfig:
         with self.manifold_support_lock:
             return self._get_manifold_support()
 
-    def get_naming_strategy(self):
-        return 'spaces'
+    @cache
+    def get_part_naming_strategy(self):
+        return NamingStrategy.SPACE
