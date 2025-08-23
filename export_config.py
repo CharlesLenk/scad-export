@@ -16,6 +16,29 @@ class NamingStrategy(StrEnum):
     SPACE = auto()
     UNDERSCORE = auto()
 
+class ColorScheme(StrEnum):
+    CORNFIELD = 'Cornfield'
+    METALLIC  = 'Metallic'
+    SUNSET = 'Sunset'
+    STARNIGHT = 'Starnight'
+    BEFORE_DAWN = 'BeforeDawn'
+    NATURE = 'Nature'
+    DAYLIGHT_GEM = 'Daylight Gem'
+    NOCTURNAL_GEM = 'Nocturnal Gem'
+    DEEP_OCEAN = 'DeepOcean'
+    SOLARIZED = 'Solarized'
+    TOMORROW = 'Tomorrow'
+    TOMORROW_NIGHT = 'Tomorrow Night'
+    CLEAR_SKY = 'ClearSky'
+    MONOTONE = 'Monotone'
+
+class ModelOutputFormat(StrEnum):
+    STL = '.stl'
+    AMF = '.amf'
+    _3MF = '.3mf'
+    DXF = '.dxf'
+    PDF = '.pdf'
+
 def is_openscad_location_valid(location):
     return shutil.which(location) is not None
 
@@ -195,4 +218,24 @@ class ExportConfig:
 
     @cache
     def get_part_naming_strategy(self):
-        return NamingStrategy.SPACE
+        return self.naming_strategy if self.naming_strategy else NamingStrategy.SPACE
+
+    @cache
+    def set_part_naming_strategy(self, naming_strategy: NamingStrategy):
+        self.naming_strategy = naming_strategy
+
+    @cache
+    def get_image_color_scheme(self):
+        return self.image_color_scheme if self.image_color_scheme else ColorScheme.CORNFIELD
+
+    @cache
+    def set_image_color_scheme(self, image_color_scheme: ColorScheme):
+        self.image_color_scheme = image_color_scheme
+
+    @cache
+    def get_model_output_format(self):
+        return self.model_output_format if self.model_output_format else ModelOutputFormat.STL
+
+    @cache
+    def set_model_output_format(self, model_output_format: ModelOutputFormat):
+        self.model_output_format = model_output_format
