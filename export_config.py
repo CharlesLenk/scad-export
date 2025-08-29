@@ -32,13 +32,6 @@ class ColorScheme(StrEnum):
     CLEAR_SKY = 'ClearSky'
     MONOTONE = 'Monotone'
 
-class ModelOutputFormat(StrEnum):
-    STL = '.stl'
-    AMF = '.amf'
-    _3MF = '.3mf'
-    DXF = '.dxf'
-    PDF = '.pdf'
-
 def is_openscad_location_valid(location):
     return shutil.which(location) is not None
 
@@ -122,7 +115,13 @@ class ExportConfig:
                 self.config[field_name] = value
                 json.dump(self.config, file, indent=2)
 
-    def __init__(self):
+    def __init__(
+            self,
+            naming_strategy: NamingStrategy = NamingStrategy.SPACE,
+            image_color_scheme: ColorScheme = ColorScheme.CORNFIELD
+        ):
+        self.naming_strategy = naming_strategy
+        self.image_color_scheme = image_color_scheme
         conf_file = os.path.join(get_working_directory(), conf_file_name)
         if os.path.isfile(conf_file):
             with open(conf_file, 'r') as file:
@@ -195,7 +194,7 @@ class ExportConfig:
     @cache
     def _get_stl_output_directory(self):
         if not is_path_writable(self.config.get(self.stl_output_directory_name, '')):
-            default = os.path.join(os.path.expanduser('~'), 'Desktop', 'stl_export')
+            default = os.path.join(os.path.expanduser('~'), 'Desktop')
             stl_output_directory = reprompt(Validateable(is_path_writable, default), 'STL output directory')
             self.persist(self.stl_output_directory_name, stl_output_directory)
         return self.config.get(self.stl_output_directory_name)
@@ -218,24 +217,8 @@ class ExportConfig:
 
     @cache
     def get_part_naming_strategy(self):
-        return self.naming_strategy if self.naming_strategy else NamingStrategy.SPACE
-
-    @cache
-    def set_part_naming_strategy(self, naming_strategy: NamingStrategy):
-        self.naming_strategy = naming_strategy
+        return self.naming_strategy
 
     @cache
     def get_image_color_scheme(self):
-        return self.image_color_scheme if self.image_color_scheme else ColorScheme.CORNFIELD
-
-    @cache
-    def set_image_color_scheme(self, image_color_scheme: ColorScheme):
-        self.image_color_scheme = image_color_scheme
-
-    @cache
-    def get_model_output_format(self):
-        return self.model_output_format if self.model_output_format else ModelOutputFormat.STL
-
-    @cache
-    def set_model_output_format(self, model_output_format: ModelOutputFormat):
-        self.model_output_format = model_output_format
+        return self.image_color_scheme
