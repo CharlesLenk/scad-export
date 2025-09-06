@@ -30,33 +30,31 @@ def format_part_name(name, naming_strategy: NamingStrategy, format, count = 1):
     formatted_name = format_name(formatted_name, naming_strategy)
     return formatted_name + format
 
-def export_file(config: ExportConfig, folder, exportable: Exportable):
+def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     output_file_name = format_part_name(exportable.file_name, config.get_output_naming_strategy(), exportable.get_output_format())
 
-    output_directory = config.get_output_directory() + folder + '/'
+    formatted_folder_path = format_path_name(folder_path, config.get_output_naming_strategy())
+    output_directory = config.get_output_directory() + formatted_folder_path + '/'
     os.makedirs(output_directory, exist_ok=True)
 
-    args = config.get_common_args() + exportable.format_args()
+    args = config.get_shared_args() + exportable.get_args()
     args.append('-o' + output_directory + output_file_name)
 
     if config.debug:
-        print('OpenSCAD args for {}:'.format(output_file_name))
-        print(args)
-        print()
+        print('OpenSCAD args for {}\n{}\n:'.format(output_file_name, args))
 
     process = Popen(args, stdout=PIPE, stderr=PIPE)
     _, err = process.communicate()
 
     output = ""
     if (process.returncode == 0):
-        output = 'Finished exporting: ' + folder + '/' + output_file_name
-        count = exportable.get_quantity()
-        for count in range(2, count + 1):
+        output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
+        for count in range(2, exportable.get_quantity() + 1):
             part_copy_name = format_part_name(exportable.file_name, config.get_output_naming_strategy(), exportable.get_output_format(), count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
-            output += '\nFinished exporting: ' + folder + '/' + part_copy_name
+            output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
-        output = 'Failed to export: ' + folder + '/' + output_file_name + ', Error: ' + str(err)
+        output = 'Failed to export: ' + formatted_folder_path + '/' + output_file_name + ', Error: ' + str(err)
     return output
 
 def export_files(nested_exportables, config: ExportConfig = ExportConfig(), threads = os.cpu_count()):
@@ -64,10 +62,9 @@ def export_files(nested_exportables, config: ExportConfig = ExportConfig(), thre
         print('Starting export')
         futures = []
         folders_and_exportables = flatten_folders(nested_exportables)
-        for folder, exportables in folders_and_exportables.items():
-            folder_name = format_path_name(folder, config.get_output_naming_strategy())
+        for folder_path, exportables in folders_and_exportables.items():
             for exportable in exportables:
-                futures.append(executor.submit(export_file, config, folder_name, exportable))
+                futures.append(executor.submit(export_file, config, folder_path, exportable))
         for future in futures:
             print(future.result())
         print('Done!')
