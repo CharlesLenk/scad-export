@@ -4,7 +4,8 @@ import string
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import Popen, PIPE
 from .export_config import ExportConfig, NamingStrategy
-from .exportable import Folder, Exportable
+from .exportable import Folder, Exportable, Image
+from numbers import Number
 
 def flatten_folders(item, current_path = '', folders_and_parts = {}):
     if isinstance(item, Exportable):
@@ -30,6 +31,33 @@ def format_part_name(name, naming_strategy: NamingStrategy, format, count = 1):
     formatted_name = format_name(formatted_name, naming_strategy)
     return formatted_name + format
 
+def _get_exportable_args(exportable: Exportable, config: ExportConfig):
+    args=[
+        config.get_openscad_location(),
+        config.get_export_file_path()
+    ]
+    if config.get_manifold_support():
+        args.append('--enable=manifold')
+    for arg, value in exportable.get_user_args().items():
+        if isinstance(value, Number):
+            args.append('-D{}={}'.format(arg, value))
+        elif isinstance(value, str):
+            args.append('-D{}="{}"'.format(arg, value))
+
+    if isinstance(exportable, Image):
+        args.append('--camera={}'.format(exportable.get_camera_position()))
+        color_scheme = exportable.get_color_scheme() if exportable.get_color_scheme() is not None else config.get_default_image_color_scheme()
+        args.append('--colorscheme={}'.format(color_scheme))
+        image_size = exportable.get_image_size() if exportable.get_image_size() is not None else config.get_default_image_size()
+        args.append('--imgsize={},{}'.format(image_size.width, image_size.height))
+        if config.get_manifold_support():
+            args.append('--render=true')
+        else:
+            args.append('-D$fs=0.4')
+            args.append('-D$fa=0.8')
+
+    return args
+
 def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     output_file_name = format_part_name(exportable.file_name, config.get_output_naming_strategy(), exportable.get_output_format())
 
@@ -37,11 +65,11 @@ def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     output_directory = config.get_output_directory() + formatted_folder_path + '/'
     os.makedirs(output_directory, exist_ok=True)
 
-    args = config.get_shared_args() + exportable.get_args()
+    args = _get_exportable_args(exportable, config)
     args.append('-o' + output_directory + output_file_name)
 
     if config.debug:
-        print('OpenSCAD args for {}\n{}\n:'.format(output_file_name, args))
+        print('\nOpenSCAD args for {}:\n{}\n'.format(output_file_name, args))
 
     process = Popen(args, stdout=PIPE, stderr=PIPE)
     _, err = process.communicate()

@@ -1,61 +1,76 @@
-from numbers import Number
 from enum import StrEnum
 
 class ModelFormat(StrEnum):
     _3MF = '.3mf'
     STL = '.stl'
 
-class Folder:
+class ColorScheme(StrEnum):
+    CORNFIELD = 'Cornfield'
+    METALLIC  = 'Metallic'
+    SUNSET = 'Sunset'
+    STARNIGHT = 'Starnight'
+    BEFORE_DAWN = 'BeforeDawn'
+    NATURE = 'Nature'
+    DAYLIGHT_GEM = 'Daylight Gem'
+    NOCTURNAL_GEM = 'Nocturnal Gem'
+    DEEP_OCEAN = 'DeepOcean'
+    SOLARIZED = 'Solarized'
+    TOMORROW = 'Tomorrow'
+    TOMORROW_NIGHT = 'Tomorrow Night'
+    CLEAR_SKY = 'ClearSky'
+    MONOTONE = 'Monotone'
+
+class ImageSize():
+    def __init__(self, width = 1600, height = 900):
+        self.width = width
+        self.height = height
+
+class Folder():
     def __init__(self, name, contents):
         self.name = name
         self.contents = contents
 
 class Exportable():
-    def __init__(self, name, output_format, file_name = None, quantity = 1, args = None):
+    def __init__(self, name, output_format, file_name = None, quantity = 1, **kwargs):
         self.name = name
         self.file_name = file_name if file_name else name
         self.output_format = output_format
         self.quantity = quantity
-        self.args = args if args else {}
-        self.args['part'] = name
+        self.user_args = kwargs if kwargs else {}
+        self.user_args['name'] = name
 
     def get_output_format(self):
         return self.output_format
-    
+
     def get_quantity(self):
         return self.quantity
 
-    def get_args(self):
-        formatted_args = []
-        for arg, value in self.args.items():
-            if isinstance(value, Number):
-                formatted_args.append('-D' + arg + '=' + str(value))
-            elif isinstance(value, str):
-                formatted_args.append('-D' + arg + '="' + value + '"')
-        return formatted_args
+    def get_user_args(self):
+        return self.user_args
 
 class Model(Exportable):
-    def __init__(self, name, file_name = None, quantity = 1, args = None, format: ModelFormat = ModelFormat._3MF):
+    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = ModelFormat._3MF, **kwargs):
         self.quantity = quantity
-        super().__init__(name, format.value, file_name, quantity, args)
+        super().__init__(name, format.value, file_name, quantity, **kwargs)
 
 class Drawing(Exportable):
-    def __init__(self, name, file_name = None, quantity = 1, args = None):
+    def __init__(self, name, file_name = None, quantity = 1, **kwargs):
         self.quantity = quantity
-        super().__init__(name, '.dxf', file_name, quantity, args)
+        super().__init__(name, '.dxf', file_name, quantity, **kwargs)
 
 class Image(Exportable):
-    def __init__(self, name, camera_position, width = 1600, height = 900, file_name = None, args = None):
+    def __init__(self, name, camera_position, image_size: ImageSize = None, color_scheme = None, file_name = None, **kwargs):
         self.name = name
-        self.width = width
-        self.height = height
+        self.image_size = image_size
+        self.color_scheme = color_scheme
         self.camera_position = camera_position
-        super().__init__(name = name, output_format = '.png', file_name = file_name, args = args)
+        super().__init__(name = name, output_format = '.png', file_name = file_name, **kwargs)
 
-    def get_args(self):
-        formatted_args = super().get_args()
-        formatted_args += [
-            '--camera=' + self.camera_position,
-            '--imgsize={},{}'.format(self.width, self.height)
-        ]
-        return formatted_args
+    def get_color_scheme(self):
+        return self.color_scheme
+
+    def get_image_size(self):
+        return self.image_size
+
+    def get_camera_position(self):
+        return self.camera_position
