@@ -11,7 +11,11 @@ def value_prompt(input_name, validation: Validation):
         exit('Quitting.')
     return validation.is_valid(input_value)
 
-def option_prompt(input_name, validation: Validation, choices = []):
+def option_prompt(input_name, validation: Validation, choices = None):
+    if choices is None:
+        choices = []
+    else:
+        choices = list(dict.fromkeys(choices))
     valid_choices = [choice for choice in choices if validation.is_valid(choice)]
     valid_choices.append('[Enter custom value]')
     choice_count = len(valid_choices)

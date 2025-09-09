@@ -39,15 +39,6 @@ class Exportable():
         self.user_args = kwargs if kwargs else {}
         self.user_args['name'] = name
 
-    def get_output_format(self):
-        return self.output_format
-
-    def get_quantity(self):
-        return self.quantity
-
-    def get_user_args(self):
-        return self.user_args
-
 class Model(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = ModelFormat._3MF, **kwargs):
         self.quantity = quantity
@@ -65,12 +56,3 @@ class Image(Exportable):
         self.color_scheme = color_scheme
         self.camera_position = camera_position
         super().__init__(name = name, output_format = '.png', file_name = file_name, **kwargs)
-
-    def get_color_scheme(self):
-        return self.color_scheme
-
-    def get_image_size(self):
-        return self.image_size
-
-    def get_camera_position(self):
-        return self.camera_position

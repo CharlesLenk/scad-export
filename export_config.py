@@ -9,6 +9,7 @@ from enum import StrEnum, auto
 from .validation import *
 from .user_input import option_prompt
 from .exportable import ColorScheme, ImageSize
+from pathlib import Path
 
 class NamingStrategy(StrEnum):
     SPACE = auto()
@@ -24,22 +25,21 @@ class ExportConfig:
         default_image_size: ImageSize = ImageSize(),
         debug = False
     ):
-        print('my debug is {} 3'.format(debug))
         self.debug = debug
-        print('my debug is {} 4'.format(self.debug))
         self._config = self._load_from_drive()
-        self.openscad_location = self.openscad_location
-        self.project_root = self.project_root
-        self.export_file_path = self.export_file_path
-        self.output_directory = self.output_directory
-        self.get_manifold_support = self.get_manifold_support
+
+        self.openscad_location
+        self.project_root
+        self.export_file_path
+        self.output_directory
+        self.manifold_supported
 
         self.output_naming_strategy = output_naming_strategy
         self.default_image_color_scheme = default_image_color_scheme
         self.default_image_size = default_image_size
 
     def _get_script_directory(self):
-        return str(os.path.dirname(os.path.realpath(__file__)))
+        return str(Path(__file__).resolve().parent)
 
     def _get_config_path(self):
         return os.path.join(self._get_script_directory(), 'export config.json')
@@ -56,7 +56,7 @@ class ExportConfig:
     def _persist(self, key, value):
         with self._config_write_lock:
             if self.debug:
-                print('Storing config key=value: {}={}'.format(key, value))
+                print('Saving config: {}={}'.format(key, value))
             self._config[key] = value
             with open(self._get_config_path(), 'w+') as file:
                 json.dump(self._config, file, indent=2)
@@ -66,7 +66,6 @@ class ExportConfig:
 
     def _get_export_file_names(self):
         matching_files = []
-        print(self.project_root)
         for _, _, files in os.walk(self.project_root):
             for file_name in files:
                 if file_name.endswith('export map.scad'):
@@ -74,17 +73,18 @@ class ExportConfig:
         return matching_files
 
     def _get_config_value(self, key):
-        if self.debug:
-            print('Retrieving config key: ' + key)
         value = self._config.get(key, '')
-        if self.debug and not value:
-            print('No value found for key: ' + key)
+        if self.debug and value:
+            print('Found saved value {}={}'.format(key, value))
+        elif self.debug and not value:
+            print('No saved value found for {}'.format(key))
         return value
 
     @cached_property
     def openscad_location(self):
         open_scad_location_name = 'openScadLocation'
-        validation = Validation(is_openscad_location_valid)
+        validation = Validation(is_openscad_path_valid)
+
         if not validation.is_valid(self._get_config_value(open_scad_location_name)):
             options = [
                 'openscad',
@@ -102,23 +102,30 @@ class ExportConfig:
         project_root_name = 'projectRoot'
         validation = Validation(is_directory)
         if not validation.is_valid(self._get_config_value(project_root_name)):
-            process = Popen(
-                ['git', 'rev-parse', '--show-superproject-working-tree'],
-                cwd=self._get_script_directory(),
-                stdout=PIPE,
-                stderr=PIPE
-            )
-            project_root, _ = process.communicate()
-            project_root = str(project_root, encoding='UTF-8').strip()
-            if not project_root:
-                project_root = os.path.dirname(self._get_script_directory())
-            project_root = option_prompt('project root folder', validation, [project_root])
+            git_root = ''
+            try:
+                process = Popen(
+                    ['git', 'rev-parse', '--show-superproject-working-tree'],
+                    cwd=self._get_script_directory(),
+                    stdout=PIPE,
+                    stderr=PIPE
+                )
+                out, err = process.communicate()
+                git_root = Path(str(out, encoding='UTF-8')).resolve(strict=False)
+                if self.debug:
+                    print('Git output when retrieving project root: {}, error: {}'.format(out, err))
+            except Exception as e:
+                if self.debug:
+                    print('Failed using git to find project root with error: {}'.format(e))
+                pass
+
+            current_script_dir = os.path.dirname(self._get_script_directory())
+            project_root = option_prompt('project root folder', validation, [git_root, current_script_dir])
             self._persist(project_root_name, project_root)
         return self._get_config_value(project_root_name)
 
     @cached_property
     def export_file_path(self):
-        print(self.debug)
         config_key = self._get_entry_point_script_name() + '.exportMapFile'
         if not os.path.isfile(self._get_config_value(config_key)):
             valid_export_files = self._get_export_file_names()
@@ -146,7 +153,7 @@ class ExportConfig:
         return self._get_config_value(config_key)
 
     @cached_property
-    def get_manifold_support(self):
+    def manifold_supported(self):
         process = Popen([self.openscad_location, '-h'], stdout=PIPE, stderr=PIPE)
         _, out = process.communicate()
         return 'manifold' in str(out)

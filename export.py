@@ -7,7 +7,9 @@ from .export_config import ExportConfig, NamingStrategy
 from .exportable import Folder, Exportable, Image
 from numbers import Number
 
-def flatten_folders(item, current_path = '', folders_and_parts = {}):
+def flatten_folders(item, current_path = '', folders_and_parts = None):
+    if folders_and_parts is None:
+        folders_and_parts = {}
     if isinstance(item, Exportable):
         folders_and_parts.setdefault(current_path, []).append(item)
     elif isinstance(item, Folder):
@@ -33,24 +35,24 @@ def format_part_name(name, naming_strategy: NamingStrategy, format, count = 1):
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     args=[
-        config.get_openscad_location(),
-        config.get_export_file_path()
+        config.openscad_location,
+        config.export_file_path
     ]
-    if config.get_manifold_support():
+    if config.manifold_supported:
         args.append('--enable=manifold')
-    for arg, value in exportable.get_user_args().items():
+    for arg, value in exportable.user_args.items():
         if isinstance(value, Number):
             args.append('-D{}={}'.format(arg, value))
         elif isinstance(value, str):
             args.append('-D{}="{}"'.format(arg, value))
 
     if isinstance(exportable, Image):
-        args.append('--camera={}'.format(exportable.get_camera_position()))
-        color_scheme = exportable.get_color_scheme() if exportable.get_color_scheme() is not None else config.get_default_image_color_scheme()
+        args.append('--camera={}'.format(exportable.camera_position))
+        color_scheme = exportable.color_scheme if exportable.color_scheme is not None else config.default_image_color_scheme
         args.append('--colorscheme={}'.format(color_scheme))
-        image_size = exportable.get_image_size() if exportable.get_image_size() is not None else config.get_default_image_size()
+        image_size = exportable.image_size if exportable.image_size is not None else config.default_image_size
         args.append('--imgsize={},{}'.format(image_size.width, image_size.height))
-        if config.get_manifold_support():
+        if config.manifold_supported:
             args.append('--render=true')
         else:
             args.append('-D$fs=0.4')
@@ -59,10 +61,10 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     return args
 
 def export_file(config: ExportConfig, folder_path, exportable: Exportable):
-    output_file_name = format_part_name(exportable.file_name, config.get_output_naming_strategy(), exportable.get_output_format())
+    output_file_name = format_part_name(exportable.file_name, config.output_naming_strategy, exportable.output_format)
 
-    formatted_folder_path = format_path_name(folder_path, config.get_output_naming_strategy())
-    output_directory = config.get_output_directory() + formatted_folder_path + '/'
+    formatted_folder_path = format_path_name(folder_path, config.output_naming_strategy)
+    output_directory = config.output_directory + formatted_folder_path + '/'
     os.makedirs(output_directory, exist_ok=True)
 
     args = _get_exportable_args(exportable, config)
@@ -77,15 +79,19 @@ def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     output = ""
     if (process.returncode == 0):
         output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
-        for count in range(2, exportable.get_quantity() + 1):
-            part_copy_name = format_part_name(exportable.file_name, config.get_output_naming_strategy(), exportable.get_output_format(), count)
+        for count in range(2, exportable.quantity + 1):
+            part_copy_name = format_part_name(exportable.file_name, config.output_naming_strategy, exportable.output_format, count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
             output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
         output = 'Failed to export: ' + formatted_folder_path + '/' + output_file_name + ', Error: ' + str(err)
     return output
 
-def export_files(nested_exportables, config: ExportConfig = ExportConfig(), threads = os.cpu_count()):
+def export_files(nested_exportables, config: ExportConfig = None, threads = None):
+    if config is None:
+        config = ExportConfig()
+    if threads is None:
+        threads = os.cpu_count()
     with ThreadPoolExecutor(max_workers = threads) as executor:
         print('Starting export')
         futures = []
