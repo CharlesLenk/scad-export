@@ -6,7 +6,7 @@ Script for parallel export of OpenSCAD parts.
 ## Prequisitsss
 
 ### Python
-(Python 3)[https://www.python.org/downloads/] is needed to run this script.
+(Python 3.13)[https://www.python.org/downloads/] or newer is needed to run this script.
 
 ### Git
 This script will perform some autoconfiguration when first run. For the autoconfiguration to work:

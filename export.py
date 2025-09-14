@@ -87,11 +87,9 @@ def export_file(config: ExportConfig, folder_path, exportable: Exportable):
         output = 'Failed to export: ' + formatted_folder_path + '/' + output_file_name + ', Error: ' + str(err)
     return output
 
-def export_files(nested_exportables, config: ExportConfig = None, threads = None):
+def export_files(nested_exportables, config: ExportConfig = None, threads = os.cpu_count()):
     if config is None:
         config = ExportConfig()
-    if threads is None:
-        threads = os.cpu_count()
     with ThreadPoolExecutor(max_workers = threads) as executor:
         print('Starting export')
         futures = []
