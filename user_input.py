@@ -3,15 +3,15 @@ from .validation import Validation, is_in_list
 from tkinter import filedialog, Tk
 import ctypes
 import platform
-from functools import cache
+from functools import cached_property
 
 class Picker():
     def __init__(self, initial_directory, window_title=''):
         self.initial_directory = initial_directory
         self.window_title = window_title
 
-    @cache
-    def _get_tk_window(self):
+    @cached_property
+    def _root_window(self):
         if platform.system() == 'Windows':
             ctypes.windll.user32.SetProcessDPIAware()
         root = Tk()
@@ -27,7 +27,7 @@ class DirectoryPicker(Picker):
         super().__init__(initial_directory, window_title)
 
     def get_value(self):
-        root = super()._get_tk_window()
+        root = super()._root_window
         root.update()
         value = filedialog.askdirectory(parent=root, title=self.window_title, initialdir=self.initial_directory)
         return value
@@ -40,7 +40,7 @@ class FilePicker(Picker):
         self.file_types = file_types
 
     def get_value(self):
-        root = super()._get_tk_window()
+        root = super()._root_window
         root.update()
         value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
         return value
