@@ -7,10 +7,10 @@ from functools import cached_property
 from threading import Lock
 from enum import StrEnum, auto
 from .validation import *
-from .user_input import option_prompt
+from .user_input import option_prompt, FilePicker, DirectoryPicker
 from .exportable import ColorScheme, ImageSize, ModelFormat
 from pathlib import Path
-from tkinter import filedialog
+import platform
 
 class NamingStrategy(StrEnum):
     SPACE = auto()
@@ -96,7 +96,13 @@ class ExportConfig:
                 '/Applications/OpenSCAD.app',
                 '~/Applications/OpenSCAD.app'
             ]
-            openscad_location = option_prompt('OpenSCAD executable location', validation, options)
+            file_type = ('OpenSCAD Executable', '*.*')
+            if platform.system() == 'Windows':
+                file_type = ('OpenSCAD .exe', '*.exe')
+            if platform.system() == 'Darwin':
+                file_type = ('OpenSCAD .app', '*.app')
+            picker = FilePicker('/', window_title='Choose OpenSCAD Executable', file_types=[file_type])
+            openscad_location = option_prompt('OpenSCAD executable location', validation, options, picker)
             self._persist(open_scad_location_name, openscad_location)
         return self._get_config_value(open_scad_location_name)
 
@@ -123,7 +129,8 @@ class ExportConfig:
                 pass
 
             current_script_dir = os.path.dirname(self._get_script_directory())
-            project_root = option_prompt('project root folder', validation, [git_root, current_script_dir])
+            picker = DirectoryPicker(self._get_script_directory(), window_title='Choose Project Root Directory')
+            project_root = option_prompt('project root folder', validation, [git_root, current_script_dir], picker)
             self._persist(project_root_name, project_root)
         return self._get_config_value(project_root_name)
 
@@ -136,7 +143,8 @@ class ExportConfig:
                 print('Found export files: ' + ', '.join(valid_export_files))
 
             validation = Validation(is_file_with_extension, file_extension='.scad', search_directory=self.project_root)
-            value = option_prompt('export map file', validation, valid_export_files)
+            picker = FilePicker(self.project_root, window_title='Choose Export Map File', file_types=[('Export Map .scad', '*.scad')])
+            value = option_prompt('export map file', validation, valid_export_files, picker)
             self._persist(config_key, value)
         return self._get_config_value(config_key)
 
@@ -151,7 +159,8 @@ class ExportConfig:
                 os.path.expanduser('~'),
                 self.project_root
             ]
-            stl_output_directory = option_prompt('output directory', validation, options)
+            picker = DirectoryPicker(os.path.expanduser('~'), window_title='Choose Output Directory')
+            stl_output_directory = option_prompt('output directory', validation, options, picker)
             self._persist(config_key, stl_output_directory)
         return self._get_config_value(config_key)
 

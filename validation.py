@@ -35,11 +35,13 @@ def get_file_path(search_directory, file_name):
     for root, _, files in os.walk(search_directory):
         if file_name in files:
             file_path = Path(root).joinpath(file_name).resolve(strict=False)
-    return str(file_path)
+    return file_path
 
 def is_file_with_extension(file_name, file_extension, search_directory):
-    file_path = get_file_path(search_directory, file_name)
-    return file_path if file_name.lower().endswith(file_extension) and file_path else ''
+    file_path = Path(file_name)
+    if not file_path.exists():
+        file_path = get_file_path(search_directory, file_name)
+    return str(file_path) if file_path and str(file_path).lower().endswith(file_extension) else ''
 
 def is_in_list(value, list):
     value = str(value).lower()
