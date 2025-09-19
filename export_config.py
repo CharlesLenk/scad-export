@@ -10,6 +10,7 @@ from .validation import *
 from .user_input import option_prompt
 from .exportable import ColorScheme, ImageSize, ModelFormat
 from pathlib import Path
+from tkinter import filedialog
 
 class NamingStrategy(StrEnum):
     SPACE = auto()
