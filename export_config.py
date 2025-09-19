@@ -100,7 +100,7 @@ class ExportConfig:
             if platform.system() == 'Windows':
                 file_type = ('OpenSCAD .exe', '*.exe')
             if platform.system() == 'Darwin':
-                file_type = ('OpenSCAD .app', '*.app')
+                file_type = ('OpenSCAD .app', '*.*')
             picker = FilePicker('/', window_title='Choose OpenSCAD Executable', file_types=[file_type])
             openscad_location = option_prompt('OpenSCAD executable location', validation, options, picker)
             self._persist(open_scad_location_name, openscad_location)
