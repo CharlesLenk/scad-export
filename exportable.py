@@ -40,9 +40,9 @@ class Exportable():
         self.user_args['name'] = name
 
 class Model(Exportable):
-    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = ModelFormat._3MF, **kwargs):
+    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = None, **kwargs):
         self.quantity = quantity
-        super().__init__(name, format.value, file_name, quantity, **kwargs)
+        super().__init__(name, format.value if format else '', file_name, quantity, **kwargs)
 
 class Drawing(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, **kwargs):

@@ -8,7 +8,7 @@ from threading import Lock
 from enum import StrEnum, auto
 from .validation import *
 from .user_input import option_prompt
-from .exportable import ColorScheme, ImageSize
+from .exportable import ColorScheme, ImageSize, ModelFormat
 from pathlib import Path
 
 class NamingStrategy(StrEnum):
@@ -21,6 +21,7 @@ class ExportConfig:
     def __init__(
         self,
         output_naming_strategy: NamingStrategy = NamingStrategy.SPACE,
+        default_model_format: ModelFormat = ModelFormat._3MF,
         default_image_color_scheme: ColorScheme = ColorScheme.CORNFIELD,
         default_image_size: ImageSize = ImageSize(),
         debug = False
@@ -35,6 +36,7 @@ class ExportConfig:
         self.manifold_supported
 
         self.output_naming_strategy = output_naming_strategy
+        self.default_model_format = default_model_format
         self.default_image_color_scheme = default_image_color_scheme
         self.default_image_size = default_image_size
 

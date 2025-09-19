@@ -4,7 +4,7 @@ import string
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import Popen, PIPE
 from .export_config import ExportConfig, NamingStrategy
-from .exportable import Folder, Exportable, Image
+from .exportable import Folder, Exportable, Model, Image
 from numbers import Number
 
 def flatten_folders(item, current_path = '', folders_and_parts = None):
@@ -60,8 +60,15 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
 
     return args
 
+def get_file_format(config: ExportConfig, exportable: Exportable):
+    file_format = exportable.output_format
+    if isinstance(exportable, Model):
+        file_format = file_format if file_format else config.default_model_format
+    return file_format
+    
 def export_file(config: ExportConfig, folder_path, exportable: Exportable):
-    output_file_name = format_part_name(exportable.file_name, config.output_naming_strategy, exportable.output_format)
+    output_format = get_file_format(config, exportable)
+    output_file_name = format_part_name(exportable.file_name, config.output_naming_strategy, output_format)
 
     formatted_folder_path = format_path_name(folder_path, config.output_naming_strategy)
     output_directory = config.output_directory + formatted_folder_path + '/'
@@ -80,7 +87,7 @@ def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     if (process.returncode == 0):
         output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
         for count in range(2, exportable.quantity + 1):
-            part_copy_name = format_part_name(exportable.file_name, config.output_naming_strategy, exportable.output_format, count)
+            part_copy_name = format_part_name(exportable.file_name, config.output_naming_strategy, output_format, count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
             output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
