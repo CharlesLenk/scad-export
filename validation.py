@@ -16,7 +16,7 @@ def is_openscad_path_valid(path):
     if platform.system() == 'Darwin' and shutil.which(path) is None:
         path += '/Contents/MacOS/OpenSCAD'
     path = Path(path).resolve(strict=False)
-    return str(path) if shutil.which(path) is not None else ''
+    return str(path) if shutil.which(path) else ''
 
 def is_directory(directory):
     if directory:

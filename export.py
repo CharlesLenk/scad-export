@@ -48,9 +48,9 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
 
     if isinstance(exportable, Image):
         args.append('--camera={}'.format(exportable.camera_position))
-        color_scheme = exportable.color_scheme if exportable.color_scheme is not None else config.default_image_color_scheme
+        color_scheme = exportable.color_scheme if exportable.color_scheme else config.default_image_color_scheme
         args.append('--colorscheme={}'.format(color_scheme))
-        image_size = exportable.image_size if exportable.image_size is not None else config.default_image_size
+        image_size = exportable.image_size if exportable.image_size else config.default_image_size
         args.append('--imgsize={},{}'.format(image_size.width, image_size.height))
         if config.manifold_supported:
             args.append('--render=true')
