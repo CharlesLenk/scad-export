@@ -3,6 +3,7 @@ import platform
 import shutil
 from pathlib import Path
 
+
 class Validation:
     def __init__(self, validation_function, **kwargs):
         self.validation_function = validation_function

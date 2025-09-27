@@ -1,5 +1,6 @@
 from enum import StrEnum
 
+
 class ModelFormat(StrEnum):
     _3MF = '.3mf'
     STL = '.stl'

@@ -1,16 +1,18 @@
 import json
 import os
-import sys
-import re
-from subprocess import Popen, PIPE
-from functools import cached_property
-from threading import Lock
-from enum import StrEnum, auto
-from .validation import *
-from .user_input import option_prompt, FilePicker, DirectoryPicker
-from .exportable import ColorScheme, ImageSize, ModelFormat
-from pathlib import Path
 import platform
+import re
+import sys
+from enum import StrEnum, auto
+from functools import cached_property
+from pathlib import Path
+from subprocess import PIPE, Popen
+from threading import Lock
+
+from .exportable import ColorScheme, ImageSize, ModelFormat
+from .user_input import DirectoryPicker, FilePicker, option_prompt
+from .validation import *
+
 
 class NamingStrategy(StrEnum):
     SPACE = auto()

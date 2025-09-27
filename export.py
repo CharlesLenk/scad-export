@@ -2,10 +2,12 @@ import os
 import shutil
 import string
 from concurrent.futures import ThreadPoolExecutor
-from subprocess import Popen, PIPE
-from .export_config import ExportConfig, NamingStrategy
-from .exportable import Folder, Exportable, Model, Image
 from numbers import Number
+from subprocess import PIPE, Popen
+
+from .export_config import ExportConfig, NamingStrategy
+from .exportable import Exportable, Folder, Image, Model
+
 
 def flatten_folders(item, current_path = '', folders_and_parts = None):
     if folders_and_parts is None:
@@ -65,7 +67,7 @@ def get_file_format(config: ExportConfig, exportable: Exportable):
     if isinstance(exportable, Model):
         file_format = file_format if file_format else config.default_model_format
     return file_format
-    
+
 def export_file(config: ExportConfig, folder_path, exportable: Exportable):
     output_format = get_file_format(config, exportable)
     output_file_name = format_part_name(exportable.file_name, config.output_naming_strategy, output_format)

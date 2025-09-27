@@ -1,9 +1,11 @@
-from sys import exit
-from .validation import Validation, is_in_list
-from tkinter import filedialog, Tk
 import ctypes
 import platform
 from functools import cached_property
+from sys import exit
+from tkinter import Tk, filedialog
+
+from .validation import Validation, is_in_list
+
 
 class Picker():
     def __init__(self, initial_directory, window_title=''):
@@ -35,14 +37,15 @@ class DirectoryPicker(Picker):
 class FilePicker(Picker):
     def __init__(self, initial_directory, window_title='Choose File', file_types:tuple=None):
         super().__init__(initial_directory, window_title)
-        if not file_types:
-            file_types=[("All Files", "*.*")]
         self.file_types = file_types
 
     def get_value(self):
         root = super()._root_window
         root.update()
-        value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
+        if self.file_types:
+            value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
+        else:
+            value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory)
         return value
 
 def picker_prompt(input_name, validation: Validation, picker: Picker):
