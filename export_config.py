@@ -27,6 +27,7 @@ class ExportConfig:
         default_model_format: ModelFormat = ModelFormat._3MF,
         default_image_color_scheme: ColorScheme = ColorScheme.CORNFIELD,
         default_image_size: ImageSize = ImageSize(),
+        parallelism = os.cpu_count(),
         debug = False
     ):
         self.debug = debug
@@ -42,6 +43,7 @@ class ExportConfig:
         self.default_model_format = default_model_format
         self.default_image_color_scheme = default_image_color_scheme
         self.default_image_size = default_image_size
+        self.parallelism = parallelism
 
     def _get_script_directory(self):
         return str(Path(__file__).resolve().parent)

@@ -51,7 +51,7 @@ class Drawing(Exportable):
         super().__init__(name, '.dxf', file_name, quantity, **kwargs)
 
 class Image(Exportable):
-    def __init__(self, name, camera_position, image_size: ImageSize = None, color_scheme = None, file_name = None, **kwargs):
+    def __init__(self, name, camera_position, file_name = None, image_size: ImageSize = None, color_scheme = None, **kwargs):
         self.name = name
         self.image_size = image_size
         self.color_scheme = color_scheme
