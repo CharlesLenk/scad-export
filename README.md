@@ -1,6 +1,6 @@
 # OpenSCAD Export
 
-OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programatically, and using multithreading to render parts in parallel, leading to an overall much faster and automated export for complex projects.
+OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programmatically, and using multithreading to render parts in parallel, leading to an overall much faster and automated export for complex projects.
 
 # Setup
 
@@ -24,18 +24,24 @@ This script is intended to be added as a submodule to a git project, but will al
 
 ## Export Map Definition
 
-A `.scad` file is needed to define the parts to export. For most projects, it's easiest to use this script by having a single `export map.scad` file which imports all parts that you want to export. This file should contain an `if/else` statement which selects the part by a variable called "name". An example of the export scad file is available in the [example project](https://github.com/CharlesLenk/openscad-export-example/blob/main/example%20export%20map.scad).
+A `.scad` file is needed to define the parts to export. For most projects, it's easiest to use this script by having a single `export map.scad` file which imports all parts that you want to export. This file should contain an `if/else` statement which selects the part by a variable called "name".
+
+An example of the `export map.scad` file is available in the [example project](https://github.com/CharlesLenk/openscad-export-example?tab=readme-ov-file#example-export-mapscad).
 
 ## Export Script Definition
 
-The parts to export and folder structure are defined in a Python script. A few examples of the part definition are provided in the [example project]().
+The parts to export and folder structure are defined in a Python script. 
 
-The supported exportable parts are (click link for full parameters):
+The supported exportable parts are:
 * [Model](#model) - Supports exporting 3D models to the 3MF or STL formats.
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#images) - Supports exporting an image of a model to the PNG format.
 
-Any additional key/value args provided will be passed to OpenSCAD as arguments. [see example project].
+Clink the links to see the parameters for each type. Additional key/value arguments provided will be passed to OpenSCAD as arguments. 
+
+
+
+[see example project](A few examples of the part definition are provided in the [example project](https://github.com/CharlesLenk/openscad-export-example/tree/main?tab=readme-ov-file#scad-example).).
 
 ## Running
 
@@ -48,7 +54,7 @@ Run your export script using Python. When first run, the configuration will atte
 
 For each of the above, the script will issue a command link prompt if you want to use of the found if defaults. If the script fails to find the default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file or directory picker (recommended), or using the command line directly.
 
-The values you select will be saved to a file called `export config.json` in the same directory as `export_config.py`. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete either the specific value you want to be reprompted for, or delete the `export config.json` file.
+The values you select will be saved to a file called `export config.json` in the same directory as `export_config.py`. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete the specific value you want to be reprompted for, or delete the `export config.json` file.
 
 In addition to the user-selected values above, the export config also supports optional [export configuration](#export-configuration) such as setting the default export type for model files, or configuring how many threads to use while exporting.
 
@@ -60,7 +66,7 @@ The configuration will also check if your current version of OpenSCAD supports M
 
 ## Export Configuration
 
-To set these options create an instance of the export config and pass the desired arguments like in the [image export example]().
+The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/openscad-export-example/blob/main/image_export_example.py#L19).
 
 |field name|type|default|description|
 |-|-|-|-|
@@ -68,7 +74,7 @@ To set these options create an instance of the export config and pass the desire
 |default_model_format|ModelFormat|`ModelFormat._3MF`|The default file type for exported models. Supported values are `ModelFormat._3MF` and `ModelFormat.STL`. If you want to override the model type for a single part, use the [model level setting](#model).|
 |default_image_color_scheme|ColorScheme|`ColorScheme.CORNFIELD`|The default color scheme to use for exported images. Supports all OpenSCAD color schemes. To override the color scheme for a single image, use the [image level setting](#image).|
 |default_image_size|ImageSize|`ImageSize(1600, 900)`|The default image resolution to use for exported images. To override the resolution for a single image, use the [image level setting](#image).|
-|paralellism|integer|System CPU count|The number of parts to render in parallel. If you want to reduce the performance impact of rendering while accepting longer run times, set this value to a number below the number of CPU cores. Setting this value to `1` will cause only one part to render at a time.|
+|parallelism|integer|System CPU count|The number of parts to render in parallel. If you want to reduce the performance impact of rendering while accepting longer run times, set this value to a number below the number of CPU cores. Setting this value to `1` will cause only one part to render at a time.|
 |debug|boolean|`false`|Whether the export should output debug statements to the console.|
 
 ## Part Configuration
