@@ -30,29 +30,25 @@ An example of the `export map.scad` file is available in the [example project](h
 
 ## Export Script Definition
 
-The parts to export and folder structure are defined in a Python script. 
+The parts to export and folder structure are defined in a Python script.
 
 The supported exportable parts are:
 * [Model](#model) - Supports exporting 3D models to the 3MF or STL formats.
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#images) - Supports exporting an image of a model to the PNG format.
 
-Clink the links to see the parameters for each type. Additional key/value arguments provided will be passed to OpenSCAD as arguments. 
-
-
-
-[see example project](A few examples of the part definition are provided in the [example project](https://github.com/CharlesLenk/openscad-export-example/tree/main?tab=readme-ov-file#scad-example).).
+Clink the links to see the parameters for each type. Additional key/value arguments provided will be passed to OpenSCAD as variables when rendering your model. The [example project](https://github.com/CharlesLenk/openscad-export-example?tab=readme-ov-file#export_examplepy) exports a number of shapes with additional parameters configured to control the dimensions of the model.
 
 ## Running
 
-Run your export script using Python. When first run, the configuration will attempt to load a saved config file. If not found, it will search for following automatically:
+After configurating the export script, run it using Python. When first run, the configuration will attempt to load a saved config file. If not found, it will search for following automatically:
 * The location of OpenSCAD on your system. This will search the default install locations for Windows, MacOS, and Linux.
-* The root directory of the current Git project, or the parent of the `openscad_export` folder if a git project is not found.
+* The root directory of the current git project, or the parent of the `openscad_export` folder if a git project is not found.
 * A `.scad` file in the project root that defines each part to export.
     * The auto-detection looks specifically for files ending with the name `export map.scad`, but any name can be used if manually selecting a file.
-* A valid folder to export the STL files to.
+* A folder to export the rendered files to.
 
-For each of the above, the script will issue a command link prompt if you want to use of the found if defaults. If the script fails to find the default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file or directory picker (recommended), or using the command line directly.
+For each of the above, the script will issue a command line prompt that will let you select from the available defaults detected. If the script fails to find a valid default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file or directory picker (recommended), or using the command line directly.
 
 The values you select will be saved to a file called `export config.json` in the same directory as `export_config.py`. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete the specific value you want to be reprompted for, or delete the `export config.json` file.
 
@@ -60,13 +56,13 @@ In addition to the user-selected values above, the export config also supports o
 
 **Manifold**
 
-The configuration will also check if your current version of OpenSCAD supports Manifold, a much faster rendering engine supported starting with the 2024 OpenSCAD development preview.
+The configuration will also check if your current version of OpenSCAD supports Manifold, a much faster rendering engine supported starting with the 2024 OpenSCAD development preview. If available, Manifold will be used when rendering.
 
 # Configuration Parameters
 
 ## Export Configuration
 
-The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/openscad-export-example/blob/main/image_export_example.py#L19).
+The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/openscad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
 
 |field name|type|default|description|
 |-|-|-|-|
