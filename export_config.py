@@ -1,145 +1,175 @@
 import json
-import shutil
-import platform
 import os
+import platform
+import re
 import sys
-from subprocess import Popen, PIPE
-from pathlib import PurePath
+from enum import StrEnum, auto
+from functools import cached_property
+from pathlib import Path
+from subprocess import PIPE, Popen
+from threading import Lock
 
-conf_file_name = 'export config.json'
-default_export_map_file_name = 'export map.scad'
-default_export_parts_config_name = 'export parts.json'
+from .exportable import ColorScheme, ImageSize, ModelFormat
+from .user_input import DirectoryPicker, FilePicker, option_prompt
+from .validation import *
 
-openScadLocationName = 'openScadLocation'
-projectRootName = 'projectRoot'
-exportMapFileName = 'exportMapFile'
-stlOutputDirectoryName = 'stlOutputDirectory'
 
-def is_openscad_location_valid(location):
-    return shutil.which(location) is not None
-
-def is_path_writable(directory):
-    return os.access(os.path.dirname(directory), os.W_OK)
-
-def get_file_path(search_directory, file_name):
-    for root, dirs, files in os.walk(search_directory):
-        if file_name in files:
-            return str(os.path.join(root, file_name))
-
-def is_file_with_extension(file_name, extension, search_directory):
-    return file_name.lower().endswith(extension) and get_file_path(search_directory, file_name) is not None
-
-def get_working_directory():
-    return str(PurePath(__file__).parents[0])
-
-def yes_no_prompt(message):
-    valid_inputs = ('y', 'n')
-    response = input(message + ' (y/n): ')
-    while response.lower() not in valid_inputs:
-        print('{} not valid. Enter one of: {}'.format(response, valid_inputs))
-        response = input(message)
-    return response.lower() == 'y'
-
-def reprompt(validation_func, input_name, default, extra_validate_args = []):
-    input_value = None
-    print('\nAttempting to load default {}: {}'.format(input_name, default))
-    if validation_func(*([default] + extra_validate_args)):
-        if yes_no_prompt('Default {} ({}) is valid. Would you like to use it?'.format(input_name, default)):
-            input_value = default
-    else:
-        print('Unable to load default {}'.format(input_name))
-
-    if (input_value is None):
-        input_value = input('Enter {} or "q" to exit: '.format(input_name))
-        while not validation_func(*([input_value] + extra_validate_args)) and input_value.strip().lower() != 'q':
-            print('{}: "{}" invalid or not accessible.'.format(input_name, input_value))
-            input_value = input('Enter {} or "q" to exit: '.format(input_name))
-        if input_value == 'q':
-            sys.exit('Quitting. {} must be set.'.format(input_name))
-    return input_value
-
-def _get_project_root():
-    process = Popen(
-        ['git', 'rev-parse', '--show-superproject-working-tree'],
-        cwd=get_working_directory(),
-        stdout=PIPE,
-        stderr=PIPE
-    )
-    project_root, _ = process.communicate()
-    project_root = str(project_root, encoding='UTF-8').strip()
-    return reprompt(os.path.isdir, 'project root folder', project_root)
-
-def _get_export_file_path(search_directory):
-    export_file_name = reprompt(
-        is_file_with_extension,
-        'export map file (.scad)',
-        default_export_map_file_name,
-        ['.scad', search_directory]
-    )
-    return get_file_path(search_directory, export_file_name)
-
-def _get_openscad_location():
-    system = platform.system()
-    location = ''
-    if (system == 'Windows'):
-        nightly_path = 'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe'
-        if (shutil.which(nightly_path) is not None):
-            location = nightly_path
-        else:
-            location = 'C:\\Program Files\\OpenSCAD\\openscad.exe'
-    elif (system == 'Darwin'):
-        location = '/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD'
-    elif (system == 'Linux'):
-        location = 'openscad'
-    return reprompt(is_openscad_location_valid, 'OpenSCAD executable location', location)
-
-def _get_stl_output_directory():
-    default = os.path.join(os.path.expanduser('~'), 'Desktop', 'stl_export')
-    return reprompt(is_path_writable, 'STL output directory', default)
-
-def _get_manifold_support(openscad_location):
-    process = Popen([openscad_location, '-h'], stdout=PIPE, stderr=PIPE)
-    _, out = process.communicate()
-    return 'manifold' in str(out)
+class NamingStrategy(StrEnum):
+    SPACE = auto()
+    UNDERSCORE = auto()
 
 class ExportConfig:
+    _config_write_lock = Lock()
 
-    def persist(self):
-        config = {}
+    def __init__(
+        self,
+        output_naming_strategy: NamingStrategy = NamingStrategy.SPACE,
+        default_model_format: ModelFormat = ModelFormat._3MF,
+        default_image_color_scheme: ColorScheme = ColorScheme.CORNFIELD,
+        default_image_size: ImageSize = ImageSize(),
+        parallelism = os.cpu_count(),
+        debug = False
+    ):
+        self.debug = debug
+        self._config = self._load_from_drive()
 
-        config[openScadLocationName] = self.openScadLocation
-        config[projectRootName] = self.projectRoot
-        config[exportMapFileName] = self.exportMapFile
-        config[stlOutputDirectoryName] = self.stlOutputDirectory
-        conf_file = os.path.join(get_working_directory(), conf_file_name)
-        with open(conf_file, 'w') as file:
-            json.dump(config, file, indent=2)
+        self.openscad_location
+        self.project_root
+        self.export_file_path
+        self.output_directory
+        self.manifold_supported
 
-    def validate(self):
-        if not is_openscad_location_valid(self.openScadLocation):
-            self.openScadLocation = _get_openscad_location()
-            self.persist()
-        if not os.path.isdir(self.projectRoot):
-            self.projectRoot = _get_project_root()
-            self.persist()
-        if not os.path.isfile(self.exportMapFile):
-            self.exportMapFile = _get_export_file_path(self.projectRoot)
-            self.persist()
-        if not is_path_writable(self.stlOutputDirectory):
-            self.stlOutputDirectory = _get_stl_output_directory()
-            self.persist()
+        self.output_naming_strategy = output_naming_strategy
+        self.default_model_format = default_model_format
+        self.default_image_color_scheme = default_image_color_scheme
+        self.default_image_size = default_image_size
+        self.parallelism = parallelism
 
-    def __init__(self):
-        conf_file = os.path.join(get_working_directory(), conf_file_name)
-        config = {}
-        if os.path.isfile(conf_file):
-            with open(conf_file, 'r') as file:
-                config = json.load(file)
+    def _get_script_directory(self):
+        return str(Path(__file__).resolve().parent)
 
-        self.openScadLocation = config.get(openScadLocationName, '')
-        self.projectRoot = config.get(projectRootName, '')
-        self.exportMapFile = config.get(exportMapFileName, '')
-        self.stlOutputDirectory = config.get(stlOutputDirectoryName, '')
-        self.validate()
+    def _get_config_path(self):
+        return os.path.join(self._get_script_directory(), 'export config.json')
 
-        self.manifoldSupport = _get_manifold_support(self.openScadLocation)
+    def _load_from_drive(self):
+        try:
+            with open(self._get_config_path(), 'r') as file:
+                return json.load(file)
+        except Exception as e:
+            if self.debug:
+                print('Failed to load config with error: {}'.format(e))
+            return {}
+
+    def _persist(self, key, value):
+        with self._config_write_lock:
+            if self.debug:
+                print('Saving config: {}={}'.format(key, value))
+            self._config[key] = value
+            with open(self._get_config_path(), 'w+') as file:
+                json.dump(self._config, file, indent=2)
+
+    def _get_entry_point_script_name(self):
+        return re.split('/|\\\\', sys.modules['__main__'].__file__)[-1][0:-3]
+
+    def _get_export_file_names(self):
+        matching_files = []
+        for _, _, files in os.walk(self.project_root):
+            for file_name in files:
+                if file_name.endswith('export map.scad'):
+                    matching_files.append(file_name)
+        return matching_files
+
+    def _get_config_value(self, key):
+        value = self._config.get(key, '')
+        if self.debug and value:
+            print('Found saved value {}={}'.format(key, value))
+        elif self.debug and not value:
+            print('No saved value found for {}'.format(key))
+        return value
+
+    @cached_property
+    def openscad_location(self):
+        open_scad_location_name = 'openScadLocation'
+        validation = Validation(is_openscad_path_valid)
+
+        if not validation.is_valid(self._get_config_value(open_scad_location_name)):
+            options = [
+                'openscad',
+                'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe',
+                'C:\\Program Files\\OpenSCAD\\openscad.exe',
+                '/Applications/OpenSCAD.app',
+                '~/Applications/OpenSCAD.app'
+            ]
+            file_type = ('OpenSCAD Executable', '*.*')
+            if platform.system() == 'Windows':
+                file_type = ('OpenSCAD .exe', '*.exe')
+            if platform.system() == 'Darwin':
+                file_type = ('OpenSCAD .app', '*.*')
+            picker = FilePicker('/', window_title='Choose OpenSCAD Executable', file_types=[file_type])
+            openscad_location = option_prompt('OpenSCAD executable location', validation, options, picker)
+            self._persist(open_scad_location_name, openscad_location)
+        return self._get_config_value(open_scad_location_name)
+
+    @cached_property
+    def project_root(self):
+        project_root_name = 'projectRoot'
+        validation = Validation(is_directory)
+        if not validation.is_valid(self._get_config_value(project_root_name)):
+            git_root = ''
+            try:
+                process = Popen(
+                    ['git', 'rev-parse', '--show-superproject-working-tree'],
+                    cwd=self._get_script_directory(),
+                    stdout=PIPE,
+                    stderr=PIPE
+                )
+                out, err = process.communicate()
+                git_root = Path(str(out, encoding='UTF-8')).resolve(strict=False)
+                if self.debug:
+                    print('Git output when retrieving project root: {}, error: {}'.format(out, err))
+            except Exception as e:
+                if self.debug:
+                    print('Failed using git to find project root with error: {}'.format(e))
+                pass
+
+            current_script_dir = os.path.dirname(self._get_script_directory())
+            picker = DirectoryPicker(self._get_script_directory(), window_title='Choose Project Root Directory')
+            project_root = option_prompt('project root folder', validation, [git_root, current_script_dir], picker)
+            self._persist(project_root_name, project_root)
+        return self._get_config_value(project_root_name)
+
+    @cached_property
+    def export_file_path(self):
+        config_key = self._get_entry_point_script_name() + '.exportMapFile'
+        if not os.path.isfile(self._get_config_value(config_key)):
+            valid_export_files = self._get_export_file_names()
+            if self.debug:
+                print('Found export files: ' + ', '.join(valid_export_files))
+
+            validation = Validation(is_file_with_extension, file_extension='.scad', search_directory=self.project_root)
+            picker = FilePicker(self.project_root, window_title='Choose Export Map File', file_types=[('Export Map .scad', '*.scad')])
+            value = option_prompt('export map file', validation, valid_export_files, picker)
+            self._persist(config_key, value)
+        return self._get_config_value(config_key)
+
+    @cached_property
+    def output_directory(self):
+        config_key = self._get_entry_point_script_name() + '.outputDirectory'
+        output_directory = self._get_config_value(config_key)
+        validation = Validation(is_path_writable)
+        if not validation.is_valid(output_directory):
+            options = [
+                os.path.join(os.path.expanduser('~'), 'Desktop'),
+                os.path.expanduser('~'),
+                self.project_root
+            ]
+            picker = DirectoryPicker(os.path.expanduser('~'), window_title='Choose Output Directory')
+            stl_output_directory = option_prompt('output directory', validation, options, picker)
+            self._persist(config_key, stl_output_directory)
+        return self._get_config_value(config_key)
+
+    @cached_property
+    def manifold_supported(self):
+        process = Popen([self.openscad_location, '-h'], stdout=PIPE, stderr=PIPE)
+        _, out = process.communicate()
+        return 'manifold' in str(out)
