@@ -1,8 +1,8 @@
-import os
 import shutil
 import string
 from concurrent.futures import ThreadPoolExecutor
 from numbers import Number
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 from .export_config import ExportConfig, NamingStrategy
@@ -71,7 +71,7 @@ def _export_file(config: ExportConfig, folder_path, exportable: Exportable):
 
     formatted_folder_path = _format_path_name(folder_path, config.output_naming_strategy)
     output_directory = config.output_directory + formatted_folder_path + '/'
-    os.makedirs(output_directory, exist_ok=True)
+    Path.mkdir(Path(output_directory), parents=True, exist_ok=True)
 
     args = _get_exportable_args(exportable, config)
     args.append('-o' + output_directory + output_file_name)
@@ -96,13 +96,17 @@ def _export_file(config: ExportConfig, folder_path, exportable: Exportable):
 def export(nested_exportables, config: ExportConfig = None):
     if config is None:
         config = ExportConfig()
-    with ThreadPoolExecutor(max_workers = config.parallelism) as executor:
-        print('Starting export')
-        futures = []
-        folders_and_exportables = _flatten_folders(nested_exportables)
-        for folder_path, exportables in folders_and_exportables.items():
-            for exportable in exportables:
-                futures.append(executor.submit(_export_file, config, folder_path, exportable))
-        for future in futures:
-            print(future.result())
-        print('Done!')
+
+    if config.initialized:
+        with ThreadPoolExecutor(max_workers = config.parallelism) as executor:
+            print('Starting export')
+            futures = []
+            folders_and_exportables = _flatten_folders(nested_exportables)
+            for folder_path, exportables in folders_and_exportables.items():
+                for exportable in exportables:
+                    futures.append(executor.submit(_export_file, config, folder_path, exportable))
+            for future in futures:
+                print(future.result())
+            print('Done!')
+    else:
+        print('Export skipped because config was not initialized.')

@@ -3,6 +3,7 @@ import os
 import platform
 import re
 import sys
+import traceback
 from enum import StrEnum, auto
 from functools import cached_property
 from pathlib import Path
@@ -30,30 +31,50 @@ class ExportConfig:
         parallelism = os.cpu_count(),
         debug = False
     ):
-        self.debug = debug
-        self._config = self._load_from_drive()
-
-        self.openscad_location
-        self.project_root
-        self.export_file_path
-        self.output_directory
-        self.manifold_supported
-
         self.output_naming_strategy = output_naming_strategy
         self.default_model_format = default_model_format
         self.default_image_color_scheme = default_image_color_scheme
         self.default_image_size = default_image_size
         self.parallelism = parallelism
+        self.debug = debug
+
+        try:
+            self._config = self._load_from_drive()
+            self.openscad_location
+            self.project_root
+            self.export_file_path
+            self.output_directory
+            self.manifold_supported
+            self.initialized = True
+        except Exception as e:
+            self.initialized = False
+            print('Failed to initialize config: {}'.format(e))
+            if debug:
+                print(traceback.format_exc())
+
+    def _get_config_directory(self):
+        global_directory = is_directory_writable(os.path.expanduser('~'))
+        working_directory = is_directory_writable(Path.cwd())
+        if (global_directory):
+            return global_directory
+        elif (working_directory):
+            return working_directory
+        else:
+            raise Exception('Could not find writeable config directory.')
 
     def _get_script_directory(self):
         return str(Path(__file__).resolve().parent)
 
-    def _get_config_path(self):
-        return os.path.join(self._get_script_directory(), 'export config.json')
+    @cached_property
+    def _config_path(self):
+        path = Path(self._get_config_directory()) / '.config/scad_export'
+        if self.debug:
+            print('Using config path: {}'.format(path))
+        return path
 
     def _load_from_drive(self):
         try:
-            with open(self._get_config_path(), 'r') as file:
+            with open(self._config_path / 'config.json', 'r') as file:
                 return json.load(file)
         except Exception as e:
             if self.debug:
@@ -65,7 +86,8 @@ class ExportConfig:
             if self.debug:
                 print('Saving config: {}={}'.format(key, value))
             self._config[key] = value
-            with open(self._get_config_path(), 'w+') as file:
+            Path.mkdir(self._config_path, parents=True, exist_ok=True)
+            with open(self._config_path / 'config.json', 'w+') as file:
                 json.dump(self._config, file, indent=2)
 
     def _get_entry_point_script_name(self):
@@ -82,7 +104,7 @@ class ExportConfig:
     def _get_config_value(self, key):
         value = self._config.get(key, '')
         if self.debug and value:
-            print('Found saved value {}={}'.format(key, value))
+            print('Found saved value "{}" = "{}"'.format(key, value))
         elif self.debug and not value:
             print('No saved value found for {}'.format(key))
         return value
@@ -156,7 +178,7 @@ class ExportConfig:
     def output_directory(self):
         config_key = self._get_entry_point_script_name() + '.outputDirectory'
         output_directory = self._get_config_value(config_key)
-        validation = Validation(is_path_writable)
+        validation = Validation(is_directory_writable)
         if not validation.is_valid(output_directory):
             options = [
                 os.path.join(os.path.expanduser('~'), 'Desktop'),
