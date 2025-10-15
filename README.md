@@ -16,7 +16,7 @@ This script is intended to be added as a submodule to a git project, but will al
 
 * For git projects, use the command below to add this project as a submodule:
 
-    `git submodule add https://github.com/CharlesLenk/openscad_export.git`
+    `git submodule add https://github.com/CharlesLenk/scad_export.git`
 
 * For non-git projects, use git to clone the script and copy it into your project folder.
 
@@ -26,7 +26,7 @@ This script is intended to be added as a submodule to a git project, but will al
 
 A `.scad` file is needed to define the parts to export. For most projects, it's easiest to use this script by having a single `export map.scad` file which imports all parts that you want to export. This file should contain an `if/else` statement which selects the part by a variable called "name".
 
-An example of the `export map.scad` file is available in the [example project](https://github.com/CharlesLenk/openscad-export-example?tab=readme-ov-file#example-export-mapscad).
+An example of the `export map.scad` file is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#example-export-mapscad).
 
 ## Export Script Definition
 
@@ -37,13 +37,13 @@ The supported exportable parts are:
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#images) - Supports exporting an image of a model to the PNG format.
 
-Clink the links to see the parameters for each type. Additional key/value arguments provided will be passed to OpenSCAD as variables when rendering your model. The [example project](https://github.com/CharlesLenk/openscad-export-example?tab=readme-ov-file#export_examplepy) exports a number of shapes with additional parameters configured to control the dimensions of the model.
+Clink the links to see the parameters for each type. Additional key/value arguments provided will be passed to OpenSCAD as variables when rendering your model. The [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy) exports a number of shapes with additional parameters configured to control the dimensions of the model.
 
 ## Running
 
 After configurating the export script, run it using Python. When first run, the configuration will attempt to load a saved config file. If not found, it will search for following automatically:
 * The location of OpenSCAD on your system. This will search the default install locations for Windows, MacOS, and Linux.
-* The root directory of the current git project, or the parent of the `openscad_export` folder if a git project is not found.
+* The root directory of the current git project, or the parent of the `scad_export` folder if a git project is not found.
 * A `.scad` file in the project root that defines each part to export.
     * The auto-detection looks specifically for files ending with the name `export map.scad`, but any name can be used if manually selecting a file.
 * A folder to export the rendered files to.
@@ -62,7 +62,7 @@ The configuration will also check if your current version of OpenSCAD supports M
 
 ## Export Configuration
 
-The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/openscad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
+The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/scad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
 
 |field name|type|default|description|
 |-|-|-|-|
