@@ -53,7 +53,7 @@ def picker_prompt(input_name, validation: Validation, picker: Picker):
     while not validation.is_valid(input_value) and input_value.strip().lower() != 'q':
         input_value = input('{}: "{}" invalid.\nPress [Enter] to retry, or type "q" to quit: '.format(input_name, input_value))
         if input_value.strip().lower() == 'q':
-            exit('Quitting.')
+            raise Exception('User quit.')
         else:
             input_value = picker.get_value()
     return validation.is_valid(input_value)
@@ -65,7 +65,7 @@ def value_prompt(input_name, validation: Validation):
         print('{}: "{}" invalid'.format(input_name, input_value))
         input_value = input(input_template.format(input_name))
     if input_value.strip().lower() == 'q':
-        exit('Quitting.')
+        raise Exception('User quit.')
     return validation.is_valid(input_value)
 
 def option_prompt(input_name, validation: Validation, choices = None, picker: Picker = None):

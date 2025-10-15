@@ -25,7 +25,7 @@ def is_directory(directory):
         directory = directory if directory.is_dir() else ''
     return str(directory)
 
-def is_path_writable(directory):
+def is_directory_writable(directory):
     if directory:
         directory = Path(directory).resolve(strict=False)
         directory = directory if os.access(directory, os.W_OK) else ''

@@ -1,4 +1,4 @@
-# OpenSCAD Export
+# SCAD Export
 
 OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programmatically, and using multithreading to render parts in parallel, leading to an overall much faster and automated export for complex projects.
 
@@ -50,7 +50,7 @@ After configurating the export script, run it using Python. When first run, the 
 
 For each of the above, the script will issue a command line prompt that will let you select from the available defaults detected. If the script fails to find a valid default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file or directory picker (recommended), or using the command line directly.
 
-The values you select will be saved to a file called `export config.json` in the same directory as `export_config.py`. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete the specific value you want to be reprompted for, or delete the `export config.json` file.
+The values you select will be saved to a file called `config.json` in either `[user home]/.config/scad_export/config.json` or your current Python working directory if your user folder can't be found or written to. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete the specific value you want to be reprompted for, or delete the `config.json` file.
 
 In addition to the user-selected values above, the export config also supports optional [export configuration](#export-configuration) such as setting the default export type for model files, or configuring how many threads to use while exporting.
 
@@ -113,7 +113,7 @@ Supports exporting an image of a model to the PNG format.
 High-level overview of the files in this project.
 
 * export_config.py
-    * Primary configuration for the export. Contains default values. Reads and writes `export config.json`.
+    * Primary configuration for the export. Contains default values. Reads and writes `config.json`.
 * export.py
     * Formats arguments and invokes OpenSCAD in parallel for exporting parts.
 * exportable.py
