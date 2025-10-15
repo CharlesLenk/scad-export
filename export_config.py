@@ -62,9 +62,6 @@ class ExportConfig:
         else:
             raise Exception('Could not find writeable config directory.')
 
-    def _get_script_directory(self):
-        return str(Path(__file__).resolve().parent)
-
     @cached_property
     def _config_path(self):
         path = Path(self._get_config_directory()) / '.config/scad_export'
@@ -89,6 +86,9 @@ class ExportConfig:
             Path.mkdir(self._config_path, parents=True, exist_ok=True)
             with open(self._config_path / 'config.json', 'w+') as file:
                 json.dump(self._config, file, indent=2)
+
+    def _get_entry_point_script_directory(self):
+        return Path(sys.modules['__main__'].__file__).resolve().parent
 
     def _get_entry_point_script_name(self):
         return re.split('/|\\\\', sys.modules['__main__'].__file__)[-1][0:-3]
@@ -138,24 +138,26 @@ class ExportConfig:
         validation = Validation(is_directory)
         if not validation.is_valid(self._get_config_value(project_root_name)):
             git_root = ''
+            current_script_dir = self._get_entry_point_script_directory()
             try:
                 process = Popen(
-                    ['git', 'rev-parse', '--show-superproject-working-tree'],
-                    cwd=self._get_script_directory(),
+                    ['git', 'rev-parse', '--show-toplevel'],
+                    cwd=current_script_dir,
                     stdout=PIPE,
                     stderr=PIPE
                 )
                 out, err = process.communicate()
-                git_root = Path(str(out, encoding='UTF-8')).resolve(strict=False)
+                root_string = str(out, encoding='UTF-8')
                 if self.debug:
-                    print('Git output when retrieving project root: {}, error: {}'.format(out, err))
+                    print('Git output when retrieving project root: {}, error: {}'.format(root_string, err))
+                if root_string:
+                    git_root = Path(root_string).resolve(strict=False)
             except Exception as e:
                 if self.debug:
                     print('Failed using git to find project root with error: {}'.format(e))
                 pass
 
-            current_script_dir = os.path.dirname(self._get_script_directory())
-            picker = DirectoryPicker(self._get_script_directory(), window_title='Choose Project Root Directory')
+            picker = DirectoryPicker(current_script_dir, window_title='Choose Project Root Directory')
             project_root = option_prompt('project root folder', validation, [git_root, current_script_dir], picker)
             self._persist(project_root_name, project_root)
         return self._get_config_value(project_root_name)
