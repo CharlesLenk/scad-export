@@ -18,7 +18,7 @@ This script is intended to be added as a submodule to a git project, but will al
 
     `git submodule add https://github.com/CharlesLenk/scad_export.git`
 
-* For non-git projects, use git to clone the script and copy it into your project folder.
+* For non-git projects, use git to clone the scad_export into your project folder, or download the zip for script and copy it into your project folder
 
 # Usage
 

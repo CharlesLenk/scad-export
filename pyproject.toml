@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scad_export"
+version = "0.9"
+authors = [
+  { name="Charles Lenk", email="lenk.charles@gmail.com" },
+]
+description = "Export script for SCAD files"
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE.md"]
+
+[project.urls]
+Homepage = "https://github.com/CharlesLenk/scad_export"
+Issues = "https://github.com/CharlesLenk/scad_export/issues"
