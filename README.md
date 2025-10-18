@@ -98,8 +98,8 @@ The `export()` function is invoked to export your files and folders.
 
 |field name|type|default|description|
 |-|-|-|-|
-|nested_exportables|`Folder`|`N/A` (Required)|A structure containing the files and folders to export.|
-|config|`ExportConfig`|An `ExportConfig` instance without [additional parameters](#exportconfig-parameters) set.|System configuration and default values to use when exporting.|
+|exportables|`Folder`|`N/A` (Required)|A [Folder](#folder) containing the files and folders to export.|
+|config|`ExportConfig`|An [ExportConfig](#exportconfig) instance without additional parameters set.|System configuration and default values to use when exporting.|
 
 ## ExportConfig
 
@@ -113,7 +113,7 @@ The export configuration also supports additional parameters to configure defaul
 
 |field name|type|default|description|
 |-|-|-|-|
-|output_naming_strategy|`export_config.NamingStrategy`|`NamingStrategy.SPACE`|The output file name format. The values supported are `NamingStrategy.SPACE` which formats the file names with spaces, and `NamingStrategy.UNDERSCORE` which formats the file names as lower case separated by underscores.|
+|output_naming_format|`export_config.NamingFormat`|`NamingFormat.TITLE_CASE`|The output file name format. The values supported are:<ul><li>`NamingFormat.NONE`<br>Use the folder and part name exactly as written.</li><li>`NamingFormat.TITLE_CASE`<br>Capitalize each word and use space as a separator.</li><li>`NamingFormat.SNAKE_CASE`<br>Lower-case each word and use underscore as a separator.</li></ul>|
 |default_model_format|`exportable.ModelFormat`|`ModelFormat._3MF`|The default file type for exported models. Supported values are `ModelFormat._3MF` and `ModelFormat.STL`. If you want to override the model type for a single part, use the [model level setting](#model-parameters).|
 |default_image_color_scheme|`exportable.ColorScheme`|`ColorScheme.CORNFIELD`|The default color scheme to use for exported images. Supports all OpenSCAD color schemes. To override the color scheme for a single image, use the [image level setting](#image-parameters).|
 |default_image_size|`exportable.ImageSize`|`ImageSize(1600, 900)`|The default image resolution to use for exported images. To override the resolution for a single image, use the [image level setting](#image-parameters).|
@@ -134,7 +134,7 @@ Folders specify the folder structure that should be used for output files.
 
 |field name|type|default|description|
 |-|-|-|-|
-|name|`string`|`N/A` (Required)|The `name` of the folder. If the name includes any slash separators (`/`), a separate folder will be created for each segment of the name separated by slashes. The name will be formatted using the [output_naming_strategy](#exportconfig-parameters).|
+|name|`string`|`N/A` (Required)|The `name` of the folder. If the name includes any slash separators (`/`), a separate folder will be created for each segment of the name separated by slashes. The name will be formatted using the [output_naming_format](#exportconfig-parameters).|
 |contents|`list`|`N/A` (Required)|A list of other exportable types, including [Models](#model), [Drawings](#drawing), [Images](#image), and nested Folders.|
 
 ### Model
@@ -150,7 +150,7 @@ Supports exporting 3D models to the 3MF or STL formats.
 |field name|type|default|description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
-|file_name|`string`|The `name` formatted using the [output_naming_strategy](#exportconfig-parameters).|The name to use for the output file.|
+|file_name|`string`|The `name` formatted using the [output_naming_format](#exportconfig-parameters).|The name to use for the output file.|
 |quantity|`integer`|`1`|The number of copies of the exported part to create. The copies are made using filesystem copy, rather than rendering the part multiple times.|
 |format|`exportable.ModelFormat`|[default_model_format](#exportconfig-parameters)|The output format to use for the model. Supported values are `ModelFormat._3MF` and `ModelFormat.STL`. To set the default for all models, set the [default_model_format](#exportconfig-parameters).|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
@@ -168,7 +168,7 @@ Supports exporting a 2D OpenSCAD project to the DXF format.
 |field name|type|default|description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
-|file_name|`string`|The `name` formatted using the [output_naming_strategy](#exportconfig-parameters).|The name to use for the output file.|
+|file_name|`string`|The `name` formatted using the [output_naming_format](#exportconfig-parameters).|The name to use for the output file.|
 |quantity|`integer`|`1`|The number of copies of the exported part to create. The copies are made using filesystem copy, rather than rendering the part multiple times.|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
 
@@ -186,9 +186,9 @@ Supports exporting an image of a model to the PNG format.
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
 |camera_position|`string`|`N/A` (Required)|The camera position to use for the picture of the model. The camera coordinates can be found at the bottom of the OpenSCAD application window when previewing a model. To make copying the coordinates easier, a custom function like [echo cam](https://github.com/CharlesLenk/openscad-utilities/blob/main/render.scad#L18) can be used to output the camera position to the OpenSCAD console.|
-|file_name|`string`|The `name` formatted using the [output_naming_strategy](#exportconfig-parameters).|The name to use for the output file.|
+|file_name|`string`|The `name` formatted using the [output_naming_format](#exportconfig-parameters).|The name to use for the output file.|
 |image_size|`exportable.ImageSize`|[default_image_size](#exportconfig-parameters)|The resolution of the output image. If you want all images to use the same resolution, set the [default_image_size](#exportconfig-parameters).|
-|color_scheme|`exportable.ColorScheme`|[default_image_color_scheme](#exportconfig-parameters)|Overrides the color scheme to use when taking the image. To set the default for all images, set the [default_image_color_scheme](#exportconfig-parameters).|
+|color_scheme|`exportable.ColorScheme`|[default_image_color_scheme](#exportconfig-parameters)|Overrides the color scheme to use when taking the image. Supports all OpenSCAD color schemes. To set the default for all images, set the [default_image_color_scheme](#exportconfig-parameters).|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
 
 # Project Files

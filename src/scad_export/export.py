@@ -5,34 +5,34 @@ from numbers import Number
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-from .export_config import ExportConfig, NamingStrategy
+from .export_config import ExportConfig, NamingFormat
 from .exportable import Exportable, Folder, Image, Model
 
 
-def _flatten_folders(item, current_path = '', folders_and_parts = None):
-    if folders_and_parts is None:
-        folders_and_parts = {}
+def _flatten_paths(item, current_path = '', paths_and_exportables = None):
+    if paths_and_exportables is None:
+        paths_and_exportables = {}
     if isinstance(item, Exportable):
-        folders_and_parts.setdefault(current_path, []).append(item)
+        paths_and_exportables.setdefault(current_path, []).append(item)
     elif isinstance(item, Folder):
         for subitem in item.contents:
-            folders_and_parts.update(_flatten_folders(subitem, current_path + '/' + item.name, folders_and_parts))
-    return folders_and_parts
+            paths_and_exportables.update(_flatten_paths(subitem, current_path + '/' + item.name, paths_and_exportables))
+    return paths_and_exportables
 
-def _format_name(name, naming_strategy: NamingStrategy):
+def _format_name(name, naming_format: NamingFormat):
     formatted_name = name
-    if naming_strategy is NamingStrategy.SPACE:
+    if naming_format is NamingFormat.TITLE_CASE:
         formatted_name = string.capwords(formatted_name.strip().replace('_', ' '))
-    elif naming_strategy is NamingStrategy.UNDERSCORE:
+    elif naming_format is NamingFormat.SNAKE_CASE:
         formatted_name = formatted_name.lower().replace(' ', '_')
     return formatted_name
 
-def _format_path_name(path, naming_strategy: NamingStrategy):
-    return '/'.join([_format_name(folder, naming_strategy) for folder in path.split('/')])
+def _format_path_name(path, naming_format: NamingFormat):
+    return '/'.join([_format_name(folder, naming_format) for folder in path.split('/')])
 
-def _format_part_name(name, naming_strategy: NamingStrategy, format, count = 1):
+def _format_part_name(name, naming_format: NamingFormat, format, count = 1):
     formatted_name = name + ('_{}'.format(count) if count > 1 else '')
-    formatted_name = _format_name(formatted_name, naming_strategy)
+    formatted_name = _format_name(formatted_name, naming_format)
     return formatted_name + format
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
@@ -62,14 +62,14 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
 
     return args
 
-def _export_file(config: ExportConfig, folder_path, exportable: Exportable):
+def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
     output_format = exportable.output_format
     if isinstance(exportable, Model):
         output_format = output_format if output_format else config.default_model_format
 
-    output_file_name = _format_part_name(exportable.file_name, config.output_naming_strategy, output_format)
+    output_file_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format)
 
-    formatted_folder_path = _format_path_name(folder_path, config.output_naming_strategy)
+    formatted_folder_path = _format_path_name(folder_path, config.output_naming_format)
     output_directory = config.output_directory + formatted_folder_path + '/'
     Path.mkdir(Path(output_directory), parents=True, exist_ok=True)
 
@@ -86,14 +86,14 @@ def _export_file(config: ExportConfig, folder_path, exportable: Exportable):
     if (process.returncode == 0):
         output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
         for count in range(2, exportable.quantity + 1):
-            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_strategy, output_format, count)
+            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format, count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
             output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
         output = 'Failed to export: "{}/{}", Error: "{}"'.format(formatted_folder_path, output_file_name, err.decode('UTF-8').strip())
     return output
 
-def export(nested_exportables, config: ExportConfig = None):
+def export(exportables: Folder, config: ExportConfig = None):
     if config is None:
         config = ExportConfig()
 
@@ -101,10 +101,10 @@ def export(nested_exportables, config: ExportConfig = None):
         with ThreadPoolExecutor(max_workers = config.parallelism) as executor:
             print('Starting export')
             futures = []
-            folders_and_exportables = _flatten_folders(nested_exportables)
-            for folder_path, exportables in folders_and_exportables.items():
-                for exportable in exportables:
-                    futures.append(executor.submit(_export_file, config, folder_path, exportable))
+            paths_and_exportables = _flatten_paths(exportables)
+            for path, path_exportables in paths_and_exportables.items():
+                for exportable in path_exportables:
+                    futures.append(executor.submit(_export_file, path, exportable, config))
             for future in futures:
                 print(future.result())
             print('Done!')
