@@ -9,7 +9,7 @@ class ColorScheme(StrEnum):
     CORNFIELD = 'Cornfield'
     METALLIC  = 'Metallic'
     SUNSET = 'Sunset'
-    STARNIGHT = 'Starnight'
+    STAR_NIGHT = 'Starnight'
     BEFORE_DAWN = 'BeforeDawn'
     NATURE = 'Nature'
     DAYLIGHT_GEM = 'Daylight Gem'

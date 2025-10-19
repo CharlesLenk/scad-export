@@ -197,7 +197,7 @@ def _is_openscad_path_valid(path):
     path = Path(path).resolve(strict=False)
     # If MacOS and executable not found, try pathing to it in .app package.
     if platform.system() == 'Darwin' and shutil.which(path) is None:
-        path / 'Contents/MacOS/OpenSCAD'
+        path = path / 'Contents/MacOS/OpenSCAD'
     return path if shutil.which(path) else ''
 
 def _is_directory(directory):
