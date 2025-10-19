@@ -51,14 +51,16 @@ The export script does two things:
 
 The parts to export and folder structure are defined using Python. An example of how to configure parts and folders is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
 
-The supported exportable parts are below. Click the links to see the parameters for each type.
+The supported exportable types are below. Click the links to see the full parameters for each type. 
 
-* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script.
+* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script. All other exportable types must be contained in at least one folder.
 * [Model](#model) - Supports exporting 3D models to the 3MF or STL formats.
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#image) - Supports exporting an image of a model to the PNG format.
 
-After defining the parts and folder structure, your export script should call the `export()` function with your parts and folders as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
+To configure defaults for all types or other export-level settings like the number of threads to use, see the [ExportConfig documentation](#exportconfig).
+
+After defining the exportables and folder structure, your export script should call the `export()` function with your parts and folders as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
 
 ## Running
 
@@ -66,29 +68,26 @@ After [writing your export script](#writing-the-export-script), run it using Pyt
 
 ### System Configuration
 
-When first run, the configuration will attempt to load a saved config file. If not found, it will search for following automatically:
-* The location of OpenSCAD on your computer. This will check if `openscad` is on your system path, then search the default install locations for your operating system.
+When first run, the configuration will attempt to load a saved config file with system-specific settings. If not found, it will search for following:
+
+1. The location of OpenSCAD on your computer. This will check if `openscad` is on your system path, then search the default install locations for your operating system.
     * This will also check if your installed OpenSCAD supports Manifold, a much faster rendering engine added starting with the 2024 OpenSCAD development preview. If available, Manifold will be used when rendering.
-* The root directory of the current git project, or the directory of your export script if a git project is not found.
-* A `.scad` file in the project root that defines each part to export.
+2. The root directory of the current git project, or the directory of your export script if a git project is not found.
+3. A `.scad` file in the project root that defines each part to export.
     * The auto-detection looks specifically for files ending with the name `export map.scad`, but any name can be used if manually selecting a file.
-* A directory to export the rendered files to.
+4. A directory to export the rendered files to.
 
-For each of the above, the script will issue a command line prompt that will let you select from the available defaults detected. If the script fails to find a valid default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file picker (recommended), or using the command line directly.
-
-In addition to the user-selected values above, the export config supports additional optional [configuration values](#exportconfig) such as setting the default export type for model files, or configuring how many threads to use while exporting.
-
-#### Export Config File
+For each of the above, a command line prompt will let you select from the available defaults detected. If the script fails to find a valid default, or if you choose not to use the default, you'll be prompted for the value to use. Custom values can be entered using file picker (recommended), or using the command line directly.
 
 The config values you select will be saved to a file called `export config.json` in the same directory as your Python script. The values in this file will be checked each time the script is run, but won't reprompt unless they are found to be invalid. To force a reprompt, delete the specific value you want to be reprompted for, or delete the `export config.json` file.
 
-* If you're using SCAD export in a git project, add `export config.json` to your `.gitignore` file. Since the configuration values are specific to your computer, uploading them will cause misconfigurations for other users exporting your project.
+If you're using SCAD export in a git project, add `export config.json` to your `.gitignore` file. Since the configuration values are specific to your computer, uploading them will cause misconfigurations for other users exporting your project.
 
 # API Documentation
 
 ## export.py
 
-The `export()` function is invoked to export your files and folders.
+The `export()` function is invoked to export the configured exportables and folders.
 
 ### Import Path
 
@@ -98,14 +97,16 @@ The `export()` function is invoked to export your files and folders.
 
 |field name|type|default|description|
 |-|-|-|-|
-|exportables|`Folder`|`N/A` (Required)|A [Folder](#folder) containing the files and folders to export.|
-|config|`ExportConfig`|An [ExportConfig](#exportconfig) instance without additional parameters set.|System configuration and default values to use when exporting.|
+|exportables|`Folder`|`N/A` (Required)|A [Folder](#folder) containing other [exportables](#exportablepy) to export.|
+|config|[ExportConfig](#exportconfig)|An [ExportConfig](#exportconfig) instance without additional parameters set.|System configuration and default values to use when exporting.|
 
 ## export_config.py
 
 ### ExportConfig
 
-The export configuration also supports additional parameters to configure defaults to use for all exports of a type, or to configure how the export itself runs. To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/scad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
+The export configuration supports additional parameters to configure defaults to use for all exports, or to configure how the export itself runs like setting the number of threads to use.
+
+To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/scad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
 
 #### Import Path
 
@@ -124,6 +125,8 @@ The export configuration also supports additional parameters to configure defaul
 
 ### NamingFormat
 
+The format to use when generating the names of output files and folders.
+
 #### Import Path
 
 `scad_export.export_config.NamingFormat`
@@ -136,22 +139,7 @@ The export configuration also supports additional parameters to configure defaul
 |TITLE_CASE|Capitalize each word and use space as a separator.|
 |SNAKE_CASE|Lower-case each word and use underscore as a separator.|
 
-## Exportables
-
-### Folder
-
-Folders specify the folder structure that should be used for output files.
-
-#### Import Path
-
-`scad_export.exportable.Folder`
-
-#### Folder Parameters
-
-|field name|type|default|description|
-|-|-|-|-|
-|name|`string`|`N/A` (Required)|The `name` of the folder. If the name includes any slash separators (`/`), a separate folder will be created for each segment of the name separated by slashes. The name will be formatted using the [output_naming_format](#exportconfig-parameters).|
-|contents|`list`|`N/A` (Required)|A list of other exportable types, including [Models](#model), [Drawings](#drawing), [Images](#image), and nested Folders.|
+## exportable.py
 
 ### Model
 
@@ -206,6 +194,21 @@ Supports exporting an image of a model to the PNG format.
 |image_size|[ImageSize](#imagesize)|[default_image_size](#exportconfig-parameters)|The resolution of the output image. If you want all images to use the same resolution, set the [default_image_size](#exportconfig-parameters).|
 |color_scheme|[ColorScheme](#colorscheme)|[default_image_color_scheme](#exportconfig-parameters)|Overrides the color scheme to use when taking the image. Supports all OpenSCAD color schemes. To set the default for all images, set the [default_image_color_scheme](#exportconfig-parameters).|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
+
+### Folder
+
+Folders specify the folder structure that should be used for output files.
+
+#### Import Path
+
+`scad_export.exportable.Folder`
+
+#### Folder Parameters
+
+|field name|type|default|description|
+|-|-|-|-|
+|name|`string`|`N/A` (Required)|The `name` of the folder. If the name includes any slash separators (`/`), a separate folder will be created for each segment of the name separated by slashes. The name will be formatted using the [output_naming_format](#exportconfig-parameters).|
+|contents|`list`|`N/A` (Required)|A list of other exportable types, including [Models](#model), [Drawings](#drawing), [Images](#image), and nested Folders.|
 
 ### ModelFormat
 
