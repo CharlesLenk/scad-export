@@ -1,6 +1,6 @@
 # SCAD Export
 
-OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programmatically, and using multithreading to render models in parallel, leading to an overall much faster and automated export for complex projects.
+OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models to files in OpenSCAD is a manual process, which makes exporting a large number of models to separate files or folders tedious and slow. This project aims to address that limitation by allowing the model and folder paths to be defined programmatically, and using multithreading to render models in parallel, leading to an overall much faster and automated export for complex projects.
 
 # Installation
 
@@ -36,7 +36,7 @@ If not installed using pip you'll need to either use relative imports, or write 
 
 ## Writing the SCAD Export Map
 
-A `.scad` file is needed to define the parts to export. This file should contain an `if/else` statement that selects which part to render by a variable called "name". A file called `export map.scad` which demonstrates this pattern is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#example-export-mapscad).
+A `.scad` file is needed to define the models to export. This file should contain an `if/else` statement that selects which part to render by a variable called "name". For an example of this pattern, see `example export map.scad` in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#example-export-mapscad).
 
 For most projects, it's easiest to use this script by having a single `export map.scad` file which imports all parts that you want to export from separate `.scad` files.
 
@@ -46,24 +46,24 @@ It's not required to use the `export map.scad` naming convention, however the SC
 
 The export script does two things:
 
-1. Configures the list of files to export, and the folder structure.
+1. Configures folders and exportables (Models, Drawings, and Images) to export.
 2. Invokes the `export()` function to run the export logic.
 
-The files to export and folder structure are defined using Python. An example of how to configure the files and folders is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
+The exportable and folder structure are defined using Python. An example of how exportables is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
 
-The supported file types are below. Click the links to see the full parameters for each type. 
+All exportables must be contained in at least one folder.
+
+* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script.
+
+The supported types of exportable are below. Click the links to see the full parameters for each type.
 
 * [Model](#model) - Supports exporting 3D models to the 3MF or STL formats.
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#image) - Supports exporting an image of a model to the PNG format.
 
-All other file types must be contained in at least one folder.
-
-* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script. 
-
 To configure defaults for all types or other export-level settings like the number of threads to use, see the [ExportConfig documentation](#exportconfig).
 
-After defining the exportables and folder structure, your export script should call the `export()` function with your files and folders as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
+After defining the exportables, your export script should call the `export()` function with your exportables as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
 
 ## Running
 
@@ -90,7 +90,7 @@ If you're using SCAD export in a git project, add `export config.json` to your `
 
 ## export.py
 
-The `export()` function is invoked to export the configured exportables and folders.
+The `export()` function is invoked to export the configured exportables.
 
 ### Import Path
 
@@ -200,7 +200,7 @@ Supports exporting an image of a model to the PNG format.
 
 ### Folder
 
-Folders specify the folder structure that should be used for output files.
+Folders specify the folder structure that should be used for output files. Folders can contain any number of other exportables, including additional Folders.
 
 #### Import Path
 
@@ -276,7 +276,7 @@ High-level overview of the files in this project.
 
 |File|Summary|
 |-|-|
-|export_config.py|Primary configuration for the export. Contains default values. Reads and writes `export config.json`.|
-|export.py|Formats arguments and invokes OpenSCAD in parallel for exporting files.|
+|export_config.py|Primary configuration for the export. Uses `export config.json` to read and write system level configuration. Also contains default values for the export.|
+|export.py|Creates directories, formats arguments, and invokes OpenSCAD in parallel to export files.|
 |exportable.py|Classes for configuring the different types of objects that can be exported.|
-|user_input.py|Functions for collecting input from the user.|
+|user_input.py|Functions for collecting input from the user. Used during auto-configuration of system-level settings.|
