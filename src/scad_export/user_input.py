@@ -1,11 +1,16 @@
 import ctypes
 import platform
 from functools import cached_property
-from sys import exit
 from tkinter import Tk, filedialog
 
-from .validation import Validation, is_in_list
 
+class Validation:
+    def __init__(self, validation_function, **kwargs):
+        self.validation_function = validation_function
+        self.kwargs = kwargs
+
+    def is_valid(self, value):
+        return self.validation_function(value, **self.kwargs)
 
 class Picker():
     def __init__(self, initial_directory, window_title=''):
@@ -14,6 +19,7 @@ class Picker():
 
     @cached_property
     def _root_window(self):
+        # Prevents blurry picker window for Windows
         if platform.system() == 'Windows':
             ctypes.windll.user32.SetProcessDPIAware()
         root = Tk()
@@ -47,6 +53,9 @@ class FilePicker(Picker):
         else:
             value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory)
         return value
+
+def _is_in_list(value, list):
+    return value if str(value).lower() in [str(item).lower() for item in list] else ''
 
 def picker_prompt(input_name, validation: Validation, picker: Picker):
     input_value = picker.get_value()
@@ -90,7 +99,7 @@ def option_prompt(input_name, validation: Validation, choices = None, picker: Pi
         for index, choice in enumerate(valid_choices):
             prompt += '  {} - {}\n'.format(index + 1, choice)
         print('\nChoose {}:\n{}'.format(input_name, prompt))
-        choice_select_validation = Validation(is_in_list, list=list(range(1, choice_count + 1)))
+        choice_select_validation = Validation(_is_in_list, list=list(range(1, choice_count + 1)))
         selected_choice = value_prompt("option number", choice_select_validation)
 
     if choice_count == 1 or int(selected_choice) == terminal_choice:

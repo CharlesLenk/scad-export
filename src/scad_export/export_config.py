@@ -2,6 +2,7 @@ import json
 import os
 import platform
 import re
+import shutil
 import sys
 import traceback
 from enum import StrEnum, auto
@@ -11,27 +12,27 @@ from subprocess import PIPE, Popen
 from threading import Lock
 
 from .exportable import ColorScheme, ImageSize, ModelFormat
-from .user_input import DirectoryPicker, FilePicker, option_prompt
-from .validation import *
+from .user_input import DirectoryPicker, FilePicker, Validation, option_prompt
 
 
-class NamingStrategy(StrEnum):
-    SPACE = auto()
-    UNDERSCORE = auto()
+class NamingFormat(StrEnum):
+    NONE = auto()
+    TITLE_CASE = auto()
+    SNAKE_CASE = auto()
 
 class ExportConfig:
     _config_write_lock = Lock()
 
     def __init__(
         self,
-        output_naming_strategy: NamingStrategy = NamingStrategy.SPACE,
+        output_naming_format: NamingFormat = NamingFormat.TITLE_CASE,
         default_model_format: ModelFormat = ModelFormat._3MF,
         default_image_color_scheme: ColorScheme = ColorScheme.CORNFIELD,
         default_image_size: ImageSize = ImageSize(),
         parallelism = os.cpu_count(),
         debug = False
     ):
-        self.output_naming_strategy = output_naming_strategy
+        self.output_naming_format = output_naming_format
         self.default_model_format = default_model_format
         self.default_image_color_scheme = default_image_color_scheme
         self.default_image_size = default_image_size
@@ -80,7 +81,7 @@ class ExportConfig:
         with self._config_write_lock:
             if self.debug:
                 print('Saving config: "{}" = "{}"'.format(key, value))
-            self._config[key] = value
+            self._config[key] = str(value)
             with open(self._config_path, 'w+') as file:
                 json.dump(self._config, file, indent=2)
 
@@ -125,7 +126,7 @@ class ExportConfig:
     @cached_property
     def openscad_location(self):
         open_scad_location_name = 'openScadLocation'
-        validation = Validation(is_openscad_path_valid)
+        validation = Validation(_is_openscad_path_valid)
 
         if not validation.is_valid(self._get_config_value(open_scad_location_name)):
             options = [
@@ -148,7 +149,7 @@ class ExportConfig:
     @cached_property
     def project_root(self):
         project_root_name = 'projectRoot'
-        validation = Validation(is_directory)
+        validation = Validation(_is_directory)
         if not validation.is_valid(self._get_config_value(project_root_name)):
             current_script_dir = self._entry_point_script_directory
             picker = DirectoryPicker(current_script_dir, window_title='Choose Project Root Directory')
@@ -164,7 +165,7 @@ class ExportConfig:
             if self.debug:
                 print('Found export files: ' + ', '.join(valid_export_files))
 
-            validation = Validation(is_file_with_extension, file_extension='.scad', search_directory=self.project_root)
+            validation = Validation(_is_file_with_extension, file_extension='.scad', search_directory=self.project_root)
             picker = FilePicker(self.project_root, window_title='Choose Export Map File', file_types=[('Export Map .scad', '*.scad')])
             value = option_prompt('export map file', validation, valid_export_files, picker)
             self._persist(config_key, value)
@@ -174,7 +175,7 @@ class ExportConfig:
     def output_directory(self):
         config_key = self._entry_point_script_name + '.outputDirectory'
         output_directory = self._get_config_value(config_key)
-        validation = Validation(is_directory_writable)
+        validation = Validation(_is_directory_writable)
         if not validation.is_valid(output_directory):
             options = [
                 os.path.join(os.path.expanduser('~'), 'Desktop'),
@@ -191,3 +192,29 @@ class ExportConfig:
         process = Popen([self.openscad_location, '-h'], stdout=PIPE, stderr=PIPE)
         _, out = process.communicate()
         return 'manifold' in str(out)
+
+def _is_openscad_path_valid(path):
+    path = Path(path).resolve(strict=False)
+    # If MacOS and executable not found, try pathing to it in .app package.
+    if platform.system() == 'Darwin' and shutil.which(path) is None:
+        path = path / 'Contents/MacOS/OpenSCAD'
+    return path if shutil.which(path) else ''
+
+def _is_directory(directory):
+    directory = Path(directory).resolve(strict=False) if directory else ''
+    return directory if directory and directory.is_dir else ''
+
+def _is_directory_writable(directory):
+    return directory if _is_directory(directory) and os.access(directory, os.W_OK) else ''
+
+def _get_file_path(search_directory, file_name):
+    for root, _, files in os.walk(search_directory):
+        if file_name in files:
+            file_path = Path(root).joinpath(file_name).resolve(strict=False)
+    return file_path
+
+def _is_file_with_extension(file_name, file_extension, search_directory):
+    file_path = Path(file_name)
+    if not file_path.exists():
+        file_path = _get_file_path(search_directory, file_name)
+    return str(file_path) if file_path and str(file_path).lower().endswith(file_extension) else ''
