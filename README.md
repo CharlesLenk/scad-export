@@ -1,6 +1,6 @@
 # SCAD Export
 
-OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programmatically, and using multithreading to render parts in parallel, leading to an overall much faster and automated export for complex projects.
+OpenSCAD is a powerful parametric modeling program, but has some limitations. One of these limitations is that exporting models in OpenSCAD is a manual process, which makes exporting a large number of parts to separate files or folders tedious and slow. This project aims to address that limitation by allowing the parts and folder paths to be defined programmatically, and using multithreading to render models in parallel, leading to an overall much faster and automated export for complex projects.
 
 # Installation
 
@@ -49,18 +49,21 @@ The export script does two things:
 1. Configures the list of files to export, and the folder structure.
 2. Invokes the `export()` function to run the export logic.
 
-The parts to export and folder structure are defined using Python. An example of how to configure parts and folders is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
+The files to export and folder structure are defined using Python. An example of how to configure the files and folders is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
 
-The supported exportable types are below. Click the links to see the full parameters for each type. 
+The supported file types are below. Click the links to see the full parameters for each type. 
 
-* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script. All other exportable types must be contained in at least one folder.
 * [Model](#model) - Supports exporting 3D models to the 3MF or STL formats.
 * [Drawing](#drawing) - Supports exporting a 2D OpenSCAD project to the DXF format.
 * [Image](#image) - Supports exporting an image of a model to the PNG format.
 
+All other file types must be contained in at least one folder.
+
+* [Folder](#folder) - Contains Models, Drawings, Images, and Folders. The folder structure of the exported files will follow the folder structure configured in your export script. 
+
 To configure defaults for all types or other export-level settings like the number of threads to use, see the [ExportConfig documentation](#exportconfig).
 
-After defining the exportables and folder structure, your export script should call the `export()` function with your parts and folders as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
+After defining the exportables and folder structure, your export script should call the `export()` function with your files and folders as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
 
 ## Running
 
@@ -95,7 +98,7 @@ The `export()` function is invoked to export the configured exportables and fold
 
 ### Export Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |exportables|`Folder`|`N/A` (Required)|A [Folder](#folder) containing other [exportables](#exportablepy) to export.|
 |config|[ExportConfig](#exportconfig)|An [ExportConfig](#exportconfig) instance without additional parameters set.|System configuration and default values to use when exporting.|
@@ -114,13 +117,13 @@ To set these options create an instance of the export config and pass the desire
 
 #### ExportConfig Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |output_naming_format|[NamingFormat](#namingformat)|`NamingFormat.TITLE_CASE`|The naming format to use for exported files and folders.|
-|default_model_format|[ModelFormat](#modelformat)|`ModelFormat._3MF`|The default file type for exported models. If you want to override the model type for a single part, use the [model level setting](#model-parameters).|
+|default_model_format|[ModelFormat](#modelformat)|`ModelFormat._3MF`|The default file type for exported models. If you want to override the model type for a single file, use the [model level setting](#model-parameters).|
 |default_image_color_scheme|[ColorScheme](#colorscheme)|`ColorScheme.CORNFIELD`|The default color scheme to use for exported images. Supports all OpenSCAD color schemes. To override the color scheme for a single image, use the [image level setting](#image-parameters).|
 |default_image_size|[ImageSize](#imagesize)|`ImageSize(1600, 900)`|The default image resolution to use for exported images. To override the resolution for a single image, use the [image level setting](#image-parameters).|
-|parallelism|`integer`|System CPU count.|The number of parts to render in parallel. If you want to reduce the performance impact of rendering while accepting longer run times, set this value to a number below the number of CPU cores. Setting this value to `1` will cause only one part to render at a time.|
+|parallelism|`integer`|System CPU count.|The number of models to render in parallel. If you want to reduce the performance impact of rendering while accepting longer run times, set this value to a number below the number of CPU cores. Setting this value to `1` will cause only one model to render at a time.|
 |debug|`boolean`|`False`|Whether the export should output debug statements to the console.|
 
 ### NamingFormat
@@ -133,9 +136,9 @@ The format to use when generating the names of output files and folders.
 
 #### Values
 
-|name|description|
+|Name|Description|
 |-|-|
-|NONE|Use the folder and part name exactly as written.|
+|NONE|Use the folder and file name exactly as written.|
 |TITLE_CASE|Capitalize each word and use space as a separator.|
 |SNAKE_CASE|Lower-case each word and use underscore as a separator.|
 
@@ -151,11 +154,11 @@ Supports exporting 3D models to the 3MF or STL formats.
 
 #### Model Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
 |file_name|`string`|The `name` formatted using the [output_naming_format](#exportconfig-parameters).|The name to use for the output file.|
-|quantity|`integer`|`1`|The number of copies of the exported part to create. The copies are made using filesystem copy, rather than rendering the part multiple times.|
+|quantity|`integer`|`1`|The number of copies of the exported file to create. The copies are made using filesystem copy, rather than rendering the model multiple times.|
 |format|[ModelFormat](#modelformat)|[default_model_format](#exportconfig-parameters)|The output format to use for the model. To set the default for all models, set the [default_model_format](#exportconfig-parameters).|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
 
@@ -169,11 +172,11 @@ Supports exporting a 2D OpenSCAD project to the DXF format.
 
 #### Drawing Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
 |file_name|`string`|The `name` formatted using the [output_naming_format](#exportconfig-parameters).|The name to use for the output file.|
-|quantity|`integer`|`1`|The number of copies of the exported part to create. The copies are made using filesystem copy, rather than rendering the part multiple times.|
+|quantity|`integer`|`1`|The number of copies of the exported file to create. The copies are made using filesystem copy, rather than rendering the model multiple times.|
 |[any]|`string` or `number`|No default|Additional arguments can be defined dynamically and will be passed to your `.scad` file when rendering. For example, if you provide the argument "size = 5", then that's the same as having a variable in your `.scad` file called "size" with a value of "5".|
 
 ### Image
@@ -186,7 +189,7 @@ Supports exporting an image of a model to the PNG format.
 
 #### Image Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The name of the part to export. This value is passed as an argument to the `.scad` export file as "name".|
 |camera_position|`string`|`N/A` (Required)|The camera position to use for the picture of the model. The camera coordinates can be found at the bottom of the OpenSCAD application window when previewing a model. To make copying the coordinates easier, a custom function like [echo cam](https://github.com/CharlesLenk/openscad-utilities/blob/main/render.scad#L18) can be used to output the camera position to the OpenSCAD console.|
@@ -205,7 +208,7 @@ Folders specify the folder structure that should be used for output files.
 
 #### Folder Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |name|`string`|`N/A` (Required)|The `name` of the folder. If the name includes any slash separators (`/`), a separate folder will be created for each segment of the name separated by slashes. The name will be formatted using the [output_naming_format](#exportconfig-parameters).|
 |contents|`list`|`N/A` (Required)|A list of other exportable types, including [Models](#model), [Drawings](#drawing), [Images](#image), and nested Folders.|
@@ -220,7 +223,7 @@ Enum for select the model export type
 
 #### Values
 
-|name|value|description|
+|Name|Value|Description|
 |-|-|-|
 |_3MF|`.3mf`|Represents the 3MF format. The name begins with an underscore because names can't begin with numbers in Python.|
 |STL|`.stl`|Represents the STL format.|
@@ -235,7 +238,7 @@ The default color scheme to use when exporting images. The value will be passed 
 
 #### Values
 
-|name|value|
+|Name|Value|
 |-|-|
 |CORNFIELD|`Cornfield`|
 |METALLIC|`Metallic`|
@@ -262,7 +265,7 @@ The width and height of an exported image in pixels.
 
 #### Parameters
 
-|field name|type|default|description|
+|Field Name|Type|Default|Description|
 |-|-|-|-|
 |width|`integer`|`1600`|The width of the image in pixels.|
 |height|`integer`|`900`|The height of the image in pixels.|
@@ -271,13 +274,9 @@ The width and height of an exported image in pixels.
 
 High-level overview of the files in this project.
 
-* export_config.py
-    * Primary configuration for the export. Contains default values. Reads and writes `export config.json`.
-* export.py
-    * Formats arguments and invokes OpenSCAD in parallel for exporting parts.
-* exportable.py
-    * Classes for configuring the different types of objects that can be exported.
-* user_input.py
-    * Functions for collecting input from the user.
-* validation.py
-    * Validation functions for config values.
+|File|Summary|
+|-|-|
+|export_config.py|Primary configuration for the export. Contains default values. Reads and writes `export config.json`.|
+|export.py|Formats arguments and invokes OpenSCAD in parallel for exporting files.|
+|exportable.py|Classes for configuring the different types of objects that can be exported.|
+|user_input.py|Functions for collecting input from the user.|
