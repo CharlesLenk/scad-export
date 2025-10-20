@@ -1,7 +1,6 @@
 import ctypes
 import platform
 from functools import cached_property
-from sys import exit
 from tkinter import Tk, filedialog
 
 
