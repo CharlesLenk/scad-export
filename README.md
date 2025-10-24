@@ -36,7 +36,7 @@ If not installed using pip you'll need to either use relative imports, or write 
 
 ## Writing the SCAD Export Map
 
-A `.scad` file is needed to define the models to export. This file should contain an `if/else` statement that selects which part to render by a variable called "name". For an example of this pattern, see `example export map.scad` in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#example-export-mapscad).
+A `.scad` file is needed to define the models to export. This file should contain an `if/else` statement that selects which part to render by a variable called "name". For an example of this pattern, see `example export map.scad` in the [example project](https://github.com/CharlesLenk/scad-export/tree/main/tests/examples#example-export-mapscad).
 
 For most projects, it's easiest to use this script by having a single `export map.scad` file which imports all parts that you want to export from separate `.scad` files.
 
@@ -49,7 +49,7 @@ The export script does two things:
 1. Configures folders and exportables (Models, Drawings, and Images) to export.
 2. Invokes the `export()` function to run the export logic.
 
-The exportable and folder structure are defined using Python. An example of how exportables is available in the [example project](https://github.com/CharlesLenk/scad-export-example?tab=readme-ov-file#export_examplepy).
+The exportable and folder structure are defined using Python. An example of how to configure this structure is available in the [examples](https://github.com/CharlesLenk/scad-export/tree/main/tests/examples#export_examplepy).
 
 All exportables must be contained in at least one folder.
 
@@ -63,7 +63,7 @@ The supported types of exportable are below. Click the links to see the full par
 
 To configure defaults for all types or other export-level settings like the number of threads to use, see the [ExportConfig documentation](#exportconfig).
 
-After defining the exportables, your export script should call the `export()` function with your exportables as an argument like in the [example](https://github.com/CharlesLenk/scad-export-example/blob/main/export_example.py#L38).
+After defining the exportables, your export script should call the `export()` function with your exportables as an argument like at the bottom of the [example script](https://github.com/CharlesLenk/scad-export/blob/main/tests/examples/export_example.py).
 
 ## Running
 
@@ -109,7 +109,7 @@ The `export()` function is invoked to export the configured exportables.
 
 The export configuration supports additional parameters to configure defaults to use for all exports, or to configure how the export itself runs like setting the number of threads to use.
 
-To set these options create an instance of the export config and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/scad-export-example/blob/main/image_export_example.py#L19). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
+To set these options create an instance of the `ExportConfig` and pass the desired arguments like in the [image export example](https://github.com/CharlesLenk/scad-export/blob/main/tests/examples/image_export_example.py). Make sure to pass the modified export config to the `export` function as a argument, also demonstrated in the example.
 
 #### Import Path
 
