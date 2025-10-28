@@ -24,6 +24,8 @@ The output of this example is identical to `export_example.py`. Since the models
 
 Demonstrates using the `Drawing` type to export a 2D circle to DXF. Drawings only support 2D types, but the usage is otherwise similar to `Model`.
 
+This example also demonstrates setting the "quantity", which creates the given number of copies of the file (3 copies in this example).
+
 #### [`image_export_example.py`](image_export_example.py)
 
 Shows how to use the `Image` export type to export images of a model to PNG.
