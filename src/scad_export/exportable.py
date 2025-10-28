@@ -38,7 +38,6 @@ class Exportable():
         self.output_format = output_format
         self.quantity = quantity
         self.user_args = kwargs if kwargs else {}
-        self.user_args['name'] = name
 
 class Model(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = None, **kwargs):

@@ -34,8 +34,7 @@ def _format_part_name(name, naming_format: NamingFormat, file_format, user_args,
     formatted_name = name
     if naming_format is not NamingFormat.NONE:
         for key, value in user_args.items():
-            if key != 'name':
-                formatted_name += '_({}-{})'.format(key, value)
+            formatted_name += '_({}-{})'.format(key, value)
     formatted_name += ('_{}'.format(count) if count > 1 else '')
     formatted_name = _format_name(formatted_name, naming_format)
     return formatted_name + file_format
@@ -47,6 +46,7 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     ]
     if config.manifold_supported:
         args.append('--enable=manifold')
+    args.append('-Dname="{}"'.format(exportable.name))
     for arg, value in exportable.user_args.items():
         if isinstance(value, Number):
             args.append('-D{}={}'.format(arg, value))
