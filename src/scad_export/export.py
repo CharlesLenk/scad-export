@@ -68,11 +68,11 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     return args
 
 def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
-    output_format = exportable.output_format
+    file_format = exportable.file_format
     if isinstance(exportable, Model):
-        output_format = output_format if output_format else config.default_model_format
+        file_format = file_format if file_format else config.default_model_format
 
-    output_file_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format, exportable.user_args)
+    output_file_name = _format_part_name(exportable.file_name, config.output_naming_format, file_format, exportable.user_args)
 
     formatted_folder_path = _format_path_name(folder_path, config.output_naming_format)
     output_directory = config.output_directory + formatted_folder_path + '/'
@@ -91,7 +91,7 @@ def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
     if (process.returncode == 0):
         output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
         for count in range(2, exportable.quantity + 1):
-            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format, exportable.user_args, count)
+            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, file_format, exportable.user_args, count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
             output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
