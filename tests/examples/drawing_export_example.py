@@ -6,6 +6,7 @@ exportables=Folder(
     contents=[
         Drawing(
             name='circle',
+            quantity=3,
             diameter=10
         )
     ]

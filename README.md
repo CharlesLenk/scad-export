@@ -128,7 +128,11 @@ To set these options create an instance of the `ExportConfig` and pass the desir
 
 ### NamingFormat
 
-The format to use when generating the names of output files and folders.
+The format to use when generating the names of output files and folders. When formatting the name, the following will also be appended:
+
+1. The file format (e.g. `.stl`).
+2. The count if the quantity of the exportable is greater than `1`.
+3. Any additional user-defined args given in the exportable definition. For example, in the [export example script](https://github.com/CharlesLenk/scad-export/blob/main/tests/examples/export_example.py), the first cube would have '(x-5) (y-5) (z-5)' appended to the file name.
 
 #### Import Path
 
@@ -138,7 +142,7 @@ The format to use when generating the names of output files and folders.
 
 |Name|Description|
 |-|-|
-|NONE|Use the folder and file name exactly as written.|
+|NONE|Use the folder and file name as written. If using this option, the file format and quantity will still be appended to the file name, but additional args will not.|
 |TITLE_CASE|Capitalize each word and use space as a separator.|
 |SNAKE_CASE|Lower-case each word and use underscore as a separator.|
 

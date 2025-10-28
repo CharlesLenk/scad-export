@@ -32,13 +32,12 @@ class Folder():
         self.contents = contents
 
 class Exportable():
-    def __init__(self, name, output_format, file_name = None, quantity = 1, **kwargs):
+    def __init__(self, name, file_format, file_name = None, quantity = 1, **kwargs):
         self.name = name
         self.file_name = file_name if file_name else name
-        self.output_format = output_format
+        self.file_format = file_format
         self.quantity = quantity
         self.user_args = kwargs if kwargs else {}
-        self.user_args['name'] = name
 
 class Model(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = None, **kwargs):
@@ -56,4 +55,4 @@ class Image(Exportable):
         self.image_size = image_size
         self.color_scheme = color_scheme
         self.camera_position = camera_position
-        super().__init__(name = name, output_format = '.png', file_name = file_name, **kwargs)
+        super().__init__(name = name, file_format = '.png', file_name = file_name, **kwargs)

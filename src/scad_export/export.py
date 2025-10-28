@@ -30,10 +30,14 @@ def _format_name(name, naming_format: NamingFormat):
 def _format_path_name(path, naming_format: NamingFormat):
     return '/'.join([_format_name(folder, naming_format) for folder in path.split('/')])
 
-def _format_part_name(name, naming_format: NamingFormat, format, count = 1):
-    formatted_name = name + ('_{}'.format(count) if count > 1 else '')
+def _format_part_name(name, naming_format: NamingFormat, file_format, user_args, count = 1):
+    formatted_name = name
+    if naming_format is not NamingFormat.NONE:
+        for key, value in user_args.items():
+            formatted_name += '_({}-{})'.format(key, value)
+    formatted_name += ('_{}'.format(count) if count > 1 else '')
     formatted_name = _format_name(formatted_name, naming_format)
-    return formatted_name + format
+    return formatted_name + file_format
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     args=[
@@ -42,6 +46,7 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     ]
     if config.manifold_supported:
         args.append('--enable=manifold')
+    args.append('-Dname="{}"'.format(exportable.name))
     for arg, value in exportable.user_args.items():
         if isinstance(value, Number):
             args.append('-D{}={}'.format(arg, value))
@@ -63,11 +68,11 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     return args
 
 def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
-    output_format = exportable.output_format
+    file_format = exportable.file_format
     if isinstance(exportable, Model):
-        output_format = output_format if output_format else config.default_model_format
+        file_format = file_format if file_format else config.default_model_format
 
-    output_file_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format)
+    output_file_name = _format_part_name(exportable.file_name, config.output_naming_format, file_format, exportable.user_args)
 
     formatted_folder_path = _format_path_name(folder_path, config.output_naming_format)
     output_directory = config.output_directory + formatted_folder_path + '/'
@@ -86,7 +91,7 @@ def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
     if (process.returncode == 0):
         output = 'Finished exporting: ' + formatted_folder_path + '/' + output_file_name
         for count in range(2, exportable.quantity + 1):
-            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, output_format, count)
+            part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, file_format, exportable.user_args, count)
             shutil.copy(output_directory + output_file_name, output_directory + part_copy_name)
             output += '\nFinished exporting: ' + formatted_folder_path + '/' + part_copy_name
     else:
