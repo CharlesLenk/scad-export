@@ -45,7 +45,7 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
         config.export_file_path
     ]
     if config.manifold_supported:
-        args.append('--enable=manifold')
+        args.append('--backend=Manifold')
     args.append('-Dname="{}"'.format(exportable.name))
     for arg, value in exportable.user_args.items():
         if isinstance(value, Number):
