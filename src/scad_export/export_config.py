@@ -191,7 +191,10 @@ class ExportConfig:
     def manifold_supported(self):
         process = Popen([self.openscad_location, '-h'], stdout=PIPE, stderr=PIPE)
         _, out = process.communicate()
-        return 'manifold' in str(out)
+        is_manifold_supported = 'manifold' in str(out).lower()
+        if (self.debug):
+            print('Manifold supported: {}'.format(is_manifold_supported))
+        return is_manifold_supported
 
 def _is_openscad_path_valid(path):
     path = Path(path).resolve(strict=False)

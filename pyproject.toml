@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scad_export"
-version = "1.3"
+version = "1.4"
 authors = [
   { name="Charles Lenk", email="lenk.charles@gmail.com" },
 ]
