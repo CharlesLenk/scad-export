@@ -32,11 +32,14 @@ def _format_path_name(path, naming_format: NamingFormat):
 
 def _format_part_name(name, naming_format: NamingFormat, file_format, user_args, count = 1):
     formatted_name = name
+    flattened_args = []
     if naming_format is not NamingFormat.NONE:
         for key, value in user_args.items():
-            formatted_name += '_({}-{})'.format(key, value)
+            formatted_name += '_({}-{})'
+            flattened_args.append(key)
+            flattened_args.append(value)
     formatted_name += ('_{}'.format(count) if count > 1 else '')
-    formatted_name = _format_name(formatted_name, naming_format)
+    formatted_name = _format_name(formatted_name, naming_format).format(*flattened_args)
     return formatted_name + file_format
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
