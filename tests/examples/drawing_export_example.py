@@ -1,5 +1,5 @@
-from scad_export.export import export
-from scad_export.exportable import Drawing, Folder
+from scad_export import export, Drawing, Folder
+
 
 exportables=Folder(
     name='scad_export/example/circle',
