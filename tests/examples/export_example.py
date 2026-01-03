@@ -1,5 +1,5 @@
-from scad_export.export import export
-from scad_export.exportable import Folder, Model
+from scad_export import export, Folder, Model
+
 
 exportables=Folder(
     # These folders are created relative to the configured export directory.
