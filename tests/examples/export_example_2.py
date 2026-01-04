@@ -1,5 +1,4 @@
-from scad_export import export, Folder, Model
-
+from scad_export import Folder, Model, export
 
 exportables=Folder(
     name='scad_export/example',

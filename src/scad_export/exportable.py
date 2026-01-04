@@ -1,4 +1,5 @@
 from enum import StrEnum
+from itertools import chain
 
 
 class ModelFormat(StrEnum):
@@ -29,7 +30,14 @@ class ImageSize():
 class Folder():
     def __init__(self, name, contents):
         self.name = name
-        self.contents = contents
+        self.contents = self._flatten(contents)
+
+    def _flatten(self, contents):
+        if isinstance(contents, list):
+            wrapped_items = [item if isinstance(item, list) else [item] for item in contents]
+            return chain.from_iterable(wrapped_items)
+        else:
+            return [contents]
 
 class Exportable():
     def __init__(self, name, file_format, file_name = None, quantity = 1, **kwargs):
