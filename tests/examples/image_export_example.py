@@ -1,5 +1,5 @@
-from scad_export import export, ExportConfig, ColorScheme, Folder, Image, ImageSize
-
+from scad_export import (ColorScheme, ExportConfig, Folder, Image, ImageSize,
+                         export)
 
 exportables=Folder(
     name='scad_export/example',
