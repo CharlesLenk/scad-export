@@ -12,7 +12,7 @@ from subprocess import PIPE, Popen
 from threading import Lock
 
 from .exportable import ColorScheme, ImageSize, ModelFormat
-from .user_input import Choice, DirectoryPicker, FilePicker, Validation, option_prompt
+from .user_input import DirectoryPicker, FilePicker, Option, Validation, option_prompt
 
 
 class NamingFormat(StrEnum):
@@ -129,8 +129,8 @@ class ExportConfig:
                 'openscad',
                 'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe',
                 'C:\\Program Files\\OpenSCAD\\openscad.exe',
-                '/Applications/OpenSCAD.app',
-                '~/Applications/OpenSCAD.app'
+                '/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD',
+                '~/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD'
             ]
             file_type = ('OpenSCAD Executable', '*.*')
             if platform.system() == 'Windows':
@@ -161,11 +161,11 @@ class ExportConfig:
             if self.debug:
                 print('Found export files: ' + ', '.join([file.name for file in valid_export_files]))
 
-            choices = [Choice(display_name='{}'.format(file.relative_to(Path(self.project_root))), value=file) for file in valid_export_files]
+            options = [Option(display_name='{}'.format(file.relative_to(Path(self.project_root))), value=file) for file in valid_export_files]
             validation = Validation(_is_file_with_extension, file_extension='.scad')
             picker = FilePicker(self.project_root, window_title='Choose Export Map File', file_types=[('Export Map .scad', '*.scad')])
-            choice = option_prompt('export map file', validation, choices, picker)
-            self._persist(config_key, choice.value if isinstance(choice, Choice) else choice)
+            choice = option_prompt('export map file', validation, options, picker)
+            self._persist(config_key, choice)
         return self._get_config_value(config_key)
 
     @cached_property
@@ -195,9 +195,6 @@ class ExportConfig:
 
 def _is_openscad_path_valid(path):
     path = Path(path).resolve(strict=False)
-    # If MacOS and executable not found, try pathing to it in .app package.
-    if platform.system() == 'Darwin' and shutil.which(path) is None:
-        path = path / 'Contents/MacOS/OpenSCAD'
     return path if shutil.which(path) else ''
 
 def _is_directory(directory):
