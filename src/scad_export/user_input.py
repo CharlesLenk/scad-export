@@ -3,6 +3,16 @@ import platform
 from functools import cached_property
 from tkinter import Tk, filedialog
 
+class Choice:
+    def __init__(self, display_name, value):
+        self.display_name = display_name
+        self.value = value
+
+    def __str__(self):
+        return self.display_name
+    
+    def __repr__(self):
+        return self.display_name
 
 class Validation:
     def __init__(self, validation_function, **kwargs):
@@ -10,7 +20,10 @@ class Validation:
         self.kwargs = kwargs
 
     def is_valid(self, value):
-        return self.validation_function(value, **self.kwargs)
+        if isinstance(value, Choice):
+            return self.validation_function(value.value, **self.kwargs)
+        else:
+            return self.validation_function(value, **self.kwargs)
 
 class Picker():
     def __init__(self, initial_directory, window_title=''):
@@ -84,6 +97,7 @@ def option_prompt(input_name, validation: Validation, choices = None, picker: Pi
     if choices is None:
         choices = []
     else:
+        # Remove duplicates while preserving order
         choices = list(dict.fromkeys(choices))
     valid_choices = [choice for choice in choices if validation.is_valid(choice)]
 
