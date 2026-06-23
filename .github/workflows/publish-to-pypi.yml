@@ -1,10 +1,9 @@
 name: Publish SCAD Export to PyPI and TestPyPI
+
 on:
-  push:
-    branches:
-    - main
-    tags:
-    - 'RELEASE'
+  release:
+    types:
+      [published]
 
 jobs:
   build:
@@ -34,8 +33,7 @@ jobs:
         path: dist/
 
   publish-to-pypi:
-      name: >-
-        Publish SCAD Export to PyPI
+      name: Publish SCAD Export to PyPI
       needs:
       - build
       runs-on: ubuntu-latest
