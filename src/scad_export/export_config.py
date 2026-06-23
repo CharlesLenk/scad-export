@@ -129,7 +129,9 @@ class ExportConfig:
                 'openscad',
                 'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe',
                 'C:\\Program Files\\OpenSCAD\\openscad.exe',
+                '/Applications/OpenSCAD.app',
                 '/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD',
+                '~/Applications/OpenSCAD.app',
                 '~/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD'
             ]
             file_type = ('OpenSCAD Executable', '*.*')
@@ -205,5 +207,4 @@ def _is_directory_writable(directory):
     return directory if _is_directory(directory) and os.access(directory, os.W_OK) else ''
 
 def _is_file_with_extension(file: Path, file_extension):
-    file = file if isinstance(file, Path) else Path(file)
     return file.exists() and file.with_suffix(file_extension)
