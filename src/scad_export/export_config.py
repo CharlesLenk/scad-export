@@ -12,7 +12,7 @@ from subprocess import PIPE, Popen
 from threading import Lock
 
 from .exportable import ColorScheme, ImageSize, ModelFormat
-from .user_input import DirectoryPicker, FilePicker, Validation, option_prompt
+from .user_input import DirectoryPicker, FilePicker, Option, Validation, option_prompt
 
 
 class NamingFormat(StrEnum):
@@ -85,13 +85,9 @@ class ExportConfig:
             with open(self._config_path, 'w+') as file:
                 json.dump(self._config, file, indent=2)
 
-    def _get_export_file_names(self):
-        matching_files = []
-        for _, _, files in os.walk(self.project_root):
-            for file_name in files:
-                if file_name.endswith('export map.scad'):
-                    matching_files.append(file_name)
-        return matching_files
+    def _get_export_files(self):
+        base_dir = Path(self.project_root)
+        return list(base_dir.rglob('*export map.scad'))
 
     def _get_config_value(self, key):
         value = self._config.get(key, '')
@@ -134,7 +130,9 @@ class ExportConfig:
                 'C:\\Program Files\\OpenSCAD (Nightly)\\openscad.exe',
                 'C:\\Program Files\\OpenSCAD\\openscad.exe',
                 '/Applications/OpenSCAD.app',
-                '~/Applications/OpenSCAD.app'
+                '/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD',
+                '~/Applications/OpenSCAD.app',
+                '~/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD'
             ]
             file_type = ('OpenSCAD Executable', '*.*')
             if platform.system() == 'Windows':
@@ -161,14 +159,15 @@ class ExportConfig:
     def export_file_path(self):
         config_key = self._entry_point_script_name + '.exportMapFile'
         if not os.path.isfile(self._get_config_value(config_key)):
-            valid_export_files = self._get_export_file_names()
+            valid_export_files = self._get_export_files()
             if self.debug:
-                print('Found export files: ' + ', '.join(valid_export_files))
+                print('Found export files: ' + ', '.join([file.name for file in valid_export_files]))
 
-            validation = Validation(_is_file_with_extension, file_extension='.scad', search_directory=self.project_root)
+            options = [Option(display_name='{}'.format(file.relative_to(Path(self.project_root))), value=file) for file in valid_export_files]
+            validation = Validation(_is_file_with_extension, file_extension='.scad')
             picker = FilePicker(self.project_root, window_title='Choose Export Map File', file_types=[('Export Map .scad', '*.scad')])
-            value = option_prompt('export map file', validation, valid_export_files, picker)
-            self._persist(config_key, value)
+            choice = option_prompt('export map file', validation, options, picker)
+            self._persist(config_key, choice)
         return self._get_config_value(config_key)
 
     @cached_property
@@ -198,9 +197,6 @@ class ExportConfig:
 
 def _is_openscad_path_valid(path):
     path = Path(path).resolve(strict=False)
-    # If MacOS and executable not found, try pathing to it in .app package.
-    if platform.system() == 'Darwin' and shutil.which(path) is None:
-        path = path / 'Contents/MacOS/OpenSCAD'
     return path if shutil.which(path) else ''
 
 def _is_directory(directory):
@@ -210,14 +206,5 @@ def _is_directory(directory):
 def _is_directory_writable(directory):
     return directory if _is_directory(directory) and os.access(directory, os.W_OK) else ''
 
-def _get_file_path(search_directory, file_name):
-    for root, _, files in os.walk(search_directory):
-        if file_name in files:
-            file_path = Path(root).joinpath(file_name).resolve(strict=False)
-    return file_path
-
-def _is_file_with_extension(file_name, file_extension, search_directory):
-    file_path = Path(file_name)
-    if not file_path.exists():
-        file_path = _get_file_path(search_directory, file_name)
-    return str(file_path) if file_path and str(file_path).lower().endswith(file_extension) else ''
+def _is_file_with_extension(file: Path, file_extension):
+    return file.exists() and file.with_suffix(file_extension)

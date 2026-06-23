@@ -30,14 +30,14 @@ class ImageSize():
 class Folder():
     def __init__(self, name, contents):
         self.name = name
-        self.contents = self._flatten(contents)
+        self.contents = list(Folder._flatten(contents))
 
-    def _flatten(self, contents):
-        if isinstance(contents, list):
-            wrapped_items = [item if isinstance(item, list) else [item] for item in contents]
-            return chain.from_iterable(wrapped_items)
-        else:
-            return [contents]
+    def _flatten(contents):
+        for element in contents:
+            if isinstance(element, list):
+                yield from Folder._flatten(element)
+            else:
+                yield element
 
 class Exportable():
     def __init__(self, name, file_format, file_name = None, quantity = 1, **kwargs):
