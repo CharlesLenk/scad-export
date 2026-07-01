@@ -1,3 +1,4 @@
 __pycache__
 dist
 export config.json
+.DS_Store
