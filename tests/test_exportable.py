@@ -58,6 +58,17 @@ class TestModel:
         assert m.quantity == 3
         assert m.user_args == {'depth': 5}
 
+    def test_mesh_repair_defaults_false(self):
+        assert Model('m').mesh_repair is False
+
+    def test_mesh_repair_explicit_true(self):
+        assert Model('m', mesh_repair=True).mesh_repair is True
+
+    def test_mesh_repair_not_in_user_args(self):
+        m = Model('m', mesh_repair=True, depth=5)
+        assert 'mesh_repair' not in m.user_args
+        assert m.user_args == {'depth': 5}
+
 
 class TestDrawing:
     def test_format_is_dxf(self):

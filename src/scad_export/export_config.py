@@ -5,12 +5,12 @@ import platform
 import shutil
 import subprocess
 import sys
-import traceback
 from enum import StrEnum, auto
 from functools import cached_property
 from pathlib import Path
 from threading import Lock
 
+from .exceptions import ConfigError
 from .exportable import ColorScheme, ImageSize, ModelFormat
 from .user_input import DirectoryPicker, FilePicker, Option, Validation, option_prompt
 
@@ -60,11 +60,8 @@ class ExportConfig:
             self.export_file_path
             self.output_directory
             self.manifold_supported
-            self.initialized = True
-        except Exception as e:
-            self.initialized = False
-            logger.error('Failed to initialize config: %s', e)
-            logger.debug(traceback.format_exc())
+        except OSError as e:
+            raise ConfigError(str(e)) from e
 
     @cached_property
     def _entry_point_script_directory(self):

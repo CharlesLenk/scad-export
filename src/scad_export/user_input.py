@@ -3,9 +3,7 @@ import platform
 from functools import cached_property
 from tkinter import Tk, filedialog
 
-
-class UserQuitError(Exception):
-    pass
+from .exceptions import UserQuitError
 
 class Picker:
     def __init__(self, initial_directory, window_title=''):

@@ -48,7 +48,8 @@ class Exportable:
         self.user_args = kwargs
 
 class Model(Exportable):
-    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat | None = None, **kwargs):
+    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat | None = None, mesh_repair: bool = False, **kwargs):
+        self.mesh_repair = mesh_repair
         super().__init__(name, format.value if format else '', file_name, quantity, **kwargs)
 
 class Drawing(Exportable):

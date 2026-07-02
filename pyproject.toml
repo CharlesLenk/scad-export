@@ -21,3 +21,9 @@ license-files = ["LICENSE.md"]
 [project.urls]
 Homepage = "https://github.com/CharlesLenk/scad_export"
 Issues = "https://github.com/CharlesLenk/scad_export/issues"
+
+[project.optional-dependencies]
+mesh_repair = [
+    "trimesh>=4.0",
+    "lxml",
+]

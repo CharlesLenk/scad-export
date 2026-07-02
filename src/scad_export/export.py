@@ -7,7 +7,9 @@ from numbers import Number
 from pathlib import Path
 
 from .export_config import ExportConfig, NamingFormat
+from .exceptions import MeshRepairError
 from .exportable import Exportable, Folder, Image, Model
+from .mesh_repair import check_available, repair_mesh_file
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +37,11 @@ def _format_path_name(path, naming_format: NamingFormat):
 
 def _format_part_name(name, naming_format: NamingFormat, file_format, user_args, count = 1):
     formatted_name = name
-    flattened_args = []
-    if naming_format is not NamingFormat.NONE:
-        for key, value in user_args.items():
-            formatted_name += '_({}-{})'
-            flattened_args.append(key)
-            flattened_args.append(value)
+    for key, value in user_args.items():
+        formatted_name += f'_({key}-{value})'
     if count > 1:
         formatted_name += f'_{count}'
-    formatted_name = _format_name(formatted_name, naming_format).format(*flattened_args)
-    return formatted_name + file_format
+    return _format_name(formatted_name, naming_format) + file_format
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     args = [
@@ -98,6 +95,12 @@ def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
         return f'Failed to export: "{formatted_folder_path}/{output_file_name}", Error: "Timed out after {config.export_timeout}s"'
 
     if result.returncode == 0:
+        if isinstance(exportable, Model) and exportable.mesh_repair:
+            try:
+                repair_mesh_file(output_directory + output_file_name)
+            except MeshRepairError as e:
+                return f'Failed to export: "{formatted_folder_path}/{output_file_name}", Error: "{e}"'
+
         output = f'Finished exporting: {formatted_folder_path}/{output_file_name}'
         for count in range(2, exportable.quantity + 1):
             part_copy_name = _format_part_name(exportable.file_name, config.output_naming_format, file_format, exportable.user_args, count)
@@ -111,16 +114,20 @@ def export(exportables: Folder, config: ExportConfig | None = None):
     if config is None:
         config = ExportConfig()
 
-    if config.initialized:
-        with ThreadPoolExecutor(max_workers = config.parallelism) as executor:
-            logger.info('Starting export')
-            futures = []
-            paths_and_exportables = _flatten_paths(exportables)
-            for path, path_exportables in paths_and_exportables.items():
-                for exportable in path_exportables:
-                    futures.append(executor.submit(_export_file, path, exportable, config))
-            for future in futures:
-                logger.info(future.result())
-            logger.info('Done!')
-    else:
-        logger.warning('Export skipped because config was not initialized.')
+    paths_and_exportables = _flatten_paths(exportables)
+    if any(
+        isinstance(exportable, Model) and exportable.mesh_repair
+        for path_exportables in paths_and_exportables.values()
+        for exportable in path_exportables
+    ):
+        check_available()
+
+    with ThreadPoolExecutor(max_workers = config.parallelism) as executor:
+        logger.info('Starting export')
+        futures = []
+        for path, path_exportables in paths_and_exportables.items():
+            for exportable in path_exportables:
+                futures.append(executor.submit(_export_file, path, exportable, config))
+        for future in futures:
+            logger.info(future.result())
+        logger.info('Done!')
