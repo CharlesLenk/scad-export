@@ -5,6 +5,7 @@ from tkinter import Tk, filedialog
 
 from .exceptions import UserQuitError
 
+
 class Picker:
     def __init__(self, initial_directory, window_title=''):
         self.initial_directory = initial_directory
@@ -23,6 +24,7 @@ class Picker:
     def get_value(self):
         raise NotImplementedError
 
+
 class DirectoryPicker(Picker):
     def __init__(self, initial_directory, window_title='Choose Directory'):
         super().__init__(initial_directory, window_title)
@@ -31,6 +33,7 @@ class DirectoryPicker(Picker):
         root = self._root_window
         root.update()
         return filedialog.askdirectory(parent=root, title=self.window_title, initialdir=self.initial_directory)
+
 
 class FilePicker(Picker):
     def __init__(self, initial_directory, window_title='Choose File', file_types: list | None = None):
@@ -44,6 +47,7 @@ class FilePicker(Picker):
             return filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
         return filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory)
 
+
 class Option:
     def __init__(self, display_name, value):
         self.display_name = display_name
@@ -55,6 +59,7 @@ class Option:
     def __repr__(self):
         return self.display_name
 
+
 class Validation:
     def __init__(self, validation_function, **kwargs):
         self.validation_function = validation_function
@@ -63,8 +68,10 @@ class Validation:
     def is_valid(self, value):
         return self.validation_function(value, **self.kwargs)
 
+
 def _is_in_list(value, values):
     return value if str(value).lower() in [str(item).lower() for item in values] else ''
+
 
 def picker_prompt(input_name, validation: Validation, picker: Picker):
     input_value = picker.get_value()
@@ -76,6 +83,7 @@ def picker_prompt(input_name, validation: Validation, picker: Picker):
             input_value = picker.get_value()
     return input_value
 
+
 def value_prompt(input_name, validation: Validation):
     input_value = input(f'Enter {input_name} or type "q" to quit: ')
     while not validation.is_valid(input_value) and input_value.strip().lower() != 'q':
@@ -84,6 +92,7 @@ def value_prompt(input_name, validation: Validation):
     if input_value.strip().lower() == 'q':
         raise UserQuitError('User quit.')
     return input_value
+
 
 def option_prompt(input_name, validation: Validation, options = None, picker: Picker | None = None):
     picker_option = '[Enter custom value using file picker]'

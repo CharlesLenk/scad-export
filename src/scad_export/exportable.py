@@ -5,6 +5,7 @@ class ModelFormat(StrEnum):
     _3MF = '.3mf'
     STL = '.stl'
 
+
 class ColorScheme(StrEnum):
     CORNFIELD = 'Cornfield'
     METALLIC  = 'Metallic'
@@ -21,10 +22,12 @@ class ColorScheme(StrEnum):
     CLEAR_SKY = 'ClearSky'
     MONOTONE = 'Monotone'
 
+
 class ImageSize:
     def __init__(self, width = 1600, height = 900):
         self.width = width
         self.height = height
+
 
 class Folder:
     def __init__(self, name, contents):
@@ -33,11 +36,15 @@ class Folder:
 
     @staticmethod
     def _flatten(contents):
-        for element in contents:
-            if isinstance(element, list):
-                yield from Folder._flatten(element)
-            else:
-                yield element
+        if isinstance(contents, list):
+            for element in contents:
+                if isinstance(element, list):
+                    yield from Folder._flatten(element)
+                else:
+                    yield element
+        else:
+            yield contents
+
 
 class Exportable:
     def __init__(self, name, file_format, file_name = None, quantity = 1, **kwargs):
@@ -47,14 +54,17 @@ class Exportable:
         self.quantity = quantity
         self.user_args = kwargs
 
+
 class Model(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat | None = None, mesh_repair: bool = False, **kwargs):
         self.mesh_repair = mesh_repair
         super().__init__(name, format.value if format else '', file_name, quantity, **kwargs)
 
+
 class Drawing(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, **kwargs):
         super().__init__(name, '.dxf', file_name, quantity, **kwargs)
+
 
 class Image(Exportable):
     def __init__(self, name, camera_position, file_name = None, image_size: ImageSize | None = None, color_scheme = None, **kwargs):

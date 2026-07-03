@@ -24,6 +24,7 @@ def _flatten_paths(item, current_path = '', paths_and_exportables = None):
             _flatten_paths(subitem, f'{current_path}/{item.name}', paths_and_exportables)
     return paths_and_exportables
 
+
 def _format_name(name, naming_format: NamingFormat):
     formatted_name = name
     if naming_format is NamingFormat.TITLE_CASE:
@@ -35,6 +36,7 @@ def _format_name(name, naming_format: NamingFormat):
 def _format_path_name(path, naming_format: NamingFormat):
     return '/'.join(_format_name(folder, naming_format) for folder in path.split('/'))
 
+
 def _format_part_name(name, naming_format: NamingFormat, file_format, user_args, count = 1):
     formatted_name = name
     for key, value in user_args.items():
@@ -42,6 +44,7 @@ def _format_part_name(name, naming_format: NamingFormat, file_format, user_args,
     if count > 1:
         formatted_name += f'_{count}'
     return _format_name(formatted_name, naming_format) + file_format
+
 
 def _get_exportable_args(exportable: Exportable, config: ExportConfig):
     args = [
@@ -72,6 +75,7 @@ def _get_exportable_args(exportable: Exportable, config: ExportConfig):
             args.append('-D$fa=0.8')
 
     return args
+
 
 def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
     file_format = exportable.file_format
@@ -109,6 +113,7 @@ def _export_file(folder_path, exportable: Exportable, config: ExportConfig):
     else:
         output = f'Failed to export: "{formatted_folder_path}/{output_file_name}", Error: "{result.stderr.decode("UTF-8").strip()}"'
     return output
+
 
 def export(exportables: Folder, config: ExportConfig | None = None):
     if config is None:

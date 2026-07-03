@@ -31,6 +31,7 @@ class NamingFormat(StrEnum):
     TITLE_CASE = auto()
     SNAKE_CASE = auto()
 
+
 class ExportConfig:
     _config_write_lock = Lock()
 
@@ -200,9 +201,11 @@ class ExportConfig:
         logger.debug('Manifold supported: %s', is_manifold_supported)
         return is_manifold_supported
 
+
 def _is_openscad_path_valid(path):
     path = Path(path).resolve(strict=False)
     return path if shutil.which(path) else ''
+
 
 def _is_directory(directory):
     if not directory:
@@ -210,8 +213,10 @@ def _is_directory(directory):
     directory = Path(directory).resolve(strict=False)
     return directory if directory.is_dir() else ''
 
+
 def _is_directory_writable(directory):
     return directory if _is_directory(directory) and os.access(directory, os.W_OK) else ''
+
 
 def _is_file_with_extension(file, file_extension):
     path = Path(file)

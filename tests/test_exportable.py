@@ -25,6 +25,10 @@ class TestFolder:
         assert outer.contents[0] is inner
         assert outer.contents[1].name == 'b'
 
+    def test_single_item(self):
+        folder = Folder('root', Model('a'))
+        assert folder.contents[0].name == 'a'
+
 
 class TestExportable:
     def test_file_name_defaults_to_name(self):
