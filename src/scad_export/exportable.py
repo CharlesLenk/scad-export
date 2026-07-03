@@ -1,10 +1,10 @@
 from enum import StrEnum
-from itertools import chain
 
 
 class ModelFormat(StrEnum):
     _3MF = '.3mf'
     STL = '.stl'
+
 
 class ColorScheme(StrEnum):
     CORNFIELD = 'Cornfield'
@@ -22,44 +22,51 @@ class ColorScheme(StrEnum):
     CLEAR_SKY = 'ClearSky'
     MONOTONE = 'Monotone'
 
-class ImageSize():
+
+class ImageSize:
     def __init__(self, width = 1600, height = 900):
         self.width = width
         self.height = height
 
-class Folder():
+
+class Folder:
     def __init__(self, name, contents):
         self.name = name
-        self.contents = self._flatten(contents)
+        self.contents = list(Folder._flatten(contents))
 
-    def _flatten(self, contents):
+    @staticmethod
+    def _flatten(contents):
         if isinstance(contents, list):
-            wrapped_items = [item if isinstance(item, list) else [item] for item in contents]
-            return chain.from_iterable(wrapped_items)
+            for element in contents:
+                if isinstance(element, list):
+                    yield from Folder._flatten(element)
+                else:
+                    yield element
         else:
-            return [contents]
+            yield contents
 
-class Exportable():
+
+class Exportable:
     def __init__(self, name, file_format, file_name = None, quantity = 1, **kwargs):
         self.name = name
         self.file_name = file_name if file_name else name
         self.file_format = file_format
         self.quantity = quantity
-        self.user_args = kwargs if kwargs else {}
+        self.user_args = kwargs
+
 
 class Model(Exportable):
-    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat = None, **kwargs):
-        self.quantity = quantity
+    def __init__(self, name, file_name = None, quantity = 1, format: ModelFormat | None = None, **kwargs):
         super().__init__(name, format.value if format else '', file_name, quantity, **kwargs)
+
 
 class Drawing(Exportable):
     def __init__(self, name, file_name = None, quantity = 1, **kwargs):
-        self.quantity = quantity
         super().__init__(name, '.dxf', file_name, quantity, **kwargs)
 
+
 class Image(Exportable):
-    def __init__(self, name, camera_position, file_name = None, image_size: ImageSize = None, color_scheme = None, **kwargs):
-        self.name = name
+    def __init__(self, name, camera_position, file_name = None, image_size: ImageSize | None = None, color_scheme = None, **kwargs):
         self.image_size = image_size
         self.color_scheme = color_scheme
         self.camera_position = camera_position

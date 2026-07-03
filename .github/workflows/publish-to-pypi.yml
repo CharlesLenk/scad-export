@@ -1,9 +1,12 @@
-name: Publish SCAD Export to PyPI and TestPyPI
+name: Publish SCAD Export to PyPI
 
 on:
   release:
     types:
       [published]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -33,20 +36,22 @@ jobs:
         path: dist/
 
   publish-to-pypi:
-      name: Publish SCAD Export to PyPI
-      needs:
-      - build
-      runs-on: ubuntu-latest
-      environment:
-        name: pypi
-        url: https://pypi.org/p/scad_export
-      permissions:
-        id-token: write
-      steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@v8
-        with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish distribution package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+    name: Publish SCAD Export to PyPI
+    # Only publish final releases; skip pre-releases.
+    if: github.event.release.prerelease == false
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/scad_export
+    permissions:
+      id-token: write
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v8
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution package to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1

@@ -6,14 +6,14 @@ name = "";
 x = 10;
 y = 10;
 z = 10;
-diameter = 10;
+d = 10;
 
 // Which part to render is based on the "name" field.
 if (name == "cube")
     cube([x, y, z]);
 else if (name == "cylinder")
-    cylinder(d = diameter, h = z);
+    cylinder(d = d, h = z);
 else if (name == "sphere")
-    sphere(d = diameter);
+    sphere(d = d);
 else if (name == "circle")
-    circle(d = diameter);
+    circle(d = d);

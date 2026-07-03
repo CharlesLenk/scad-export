@@ -3,16 +3,10 @@ import platform
 from functools import cached_property
 from tkinter import Tk, filedialog
 
+from .exceptions import UserQuitError
 
-class Validation:
-    def __init__(self, validation_function, **kwargs):
-        self.validation_function = validation_function
-        self.kwargs = kwargs
 
-    def is_valid(self, value):
-        return self.validation_function(value, **self.kwargs)
-
-class Picker():
+class Picker:
     def __init__(self, initial_directory, window_title=''):
         self.initial_directory = initial_directory
         self.window_title = window_title
@@ -28,83 +22,107 @@ class Picker():
         return root
 
     def get_value(self):
-        pass
+        raise NotImplementedError
+
 
 class DirectoryPicker(Picker):
     def __init__(self, initial_directory, window_title='Choose Directory'):
         super().__init__(initial_directory, window_title)
 
     def get_value(self):
-        root = super()._root_window
+        root = self._root_window
         root.update()
-        value = filedialog.askdirectory(parent=root, title=self.window_title, initialdir=self.initial_directory)
-        return value
+        return filedialog.askdirectory(parent=root, title=self.window_title, initialdir=self.initial_directory)
+
 
 class FilePicker(Picker):
-    def __init__(self, initial_directory, window_title='Choose File', file_types:tuple=None):
+    def __init__(self, initial_directory, window_title='Choose File', file_types: list | None = None):
         super().__init__(initial_directory, window_title)
         self.file_types = file_types
 
     def get_value(self):
-        root = super()._root_window
+        root = self._root_window
         root.update()
         if self.file_types:
-            value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
-        else:
-            value = filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory)
-        return value
+            return filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory, filetypes=self.file_types)
+        return filedialog.askopenfilename(parent=root, title=self.window_title, initialdir=self.initial_directory)
 
-def _is_in_list(value, list):
-    return value if str(value).lower() in [str(item).lower() for item in list] else ''
+
+class Option:
+    def __init__(self, display_name, value):
+        self.display_name = display_name
+        self.value = value
+
+    def __str__(self):
+        return self.display_name
+
+    def __repr__(self):
+        return self.display_name
+
+
+class Validation:
+    def __init__(self, validation_function, **kwargs):
+        self.validation_function = validation_function
+        self.kwargs = kwargs
+
+    def is_valid(self, value):
+        return self.validation_function(value, **self.kwargs)
+
+
+def _is_in_list(value, values):
+    return value if str(value).lower() in [str(item).lower() for item in values] else ''
+
 
 def picker_prompt(input_name, validation: Validation, picker: Picker):
     input_value = picker.get_value()
-    while not validation.is_valid(input_value) and input_value.strip().lower() != 'q':
-        input_value = input('{}: "{}" invalid.\nPress [Enter] to retry, or type "q" to quit: '.format(input_name, input_value))
+    while not validation.is_valid(input_value):
+        input_value = input(f'{input_name}: "{input_value}" invalid.\nPress [Enter] to retry, or type "q" to quit: ')
         if input_value.strip().lower() == 'q':
-            raise Exception('User quit.')
+            raise UserQuitError('User quit.')
         else:
             input_value = picker.get_value()
-    return validation.is_valid(input_value)
+    return input_value
+
 
 def value_prompt(input_name, validation: Validation):
-    input_template = 'Enter {} or type "q" to quit: '
-    input_value = input(input_template.format(input_name))
+    input_value = input(f'Enter {input_name} or type "q" to quit: ')
     while not validation.is_valid(input_value) and input_value.strip().lower() != 'q':
-        print('{}: "{}" invalid'.format(input_name, input_value))
-        input_value = input(input_template.format(input_name))
+        print(f'{input_name}: "{input_value}" invalid')
+        input_value = input(f'Enter {input_name} or type "q" to quit: ')
     if input_value.strip().lower() == 'q':
-        raise Exception('User quit.')
-    return validation.is_valid(input_value)
+        raise UserQuitError('User quit.')
+    return input_value
 
-def option_prompt(input_name, validation: Validation, choices = None, picker: Picker = None):
-    picker_choice = None
-    terminal_choice = None
 
-    if choices is None:
-        choices = []
-    else:
-        choices = list(dict.fromkeys(choices))
-    valid_choices = [choice for choice in choices if validation.is_valid(choice)]
+def option_prompt(input_name, validation: Validation, options = None, picker: Picker | None = None):
+    picker_option = '[Enter custom value using file picker]'
+    terminal_option = '[Enter custom value using terminal]'
+    # Remove duplicates while preserving order
+    options = list(dict.fromkeys(options)) if options else []
+
+    valid_options = {}
+    for option in options:
+        option_value = option.value if isinstance(option, Option) else option
+        if validation.is_valid(option_value):
+            valid_options[len(valid_options) + 1] = option
 
     if picker:
-        valid_choices.append('[Enter custom value using file picker]')
-        picker_choice = len(valid_choices)
-    valid_choices.append('[Enter custom value using terminal]')
-    terminal_choice = len(valid_choices)
+        valid_options[len(valid_options) + 1] = picker_option
+    valid_options[len(valid_options) + 1] = terminal_option
 
-    choice_count = len(valid_choices)
-    if choice_count > 1:
+    selected_option = 1
+    if len(valid_options) > 1:
         prompt = ''
-        for index, choice in enumerate(valid_choices):
-            prompt += '  {} - {}\n'.format(index + 1, choice)
-        print('\nChoose {}:\n{}'.format(input_name, prompt))
-        choice_select_validation = Validation(_is_in_list, list=list(range(1, choice_count + 1)))
-        selected_choice = value_prompt("option number", choice_select_validation)
+        for option_number, option in valid_options.items():
+            prompt += f'  {option_number} - {option}\n'
+        print(f'\nChoose {input_name}:\n{prompt}')
+        option_select_validation = Validation(_is_in_list, values=valid_options.keys())
+        selected_option = int(value_prompt("option number", option_select_validation))
 
-    if choice_count == 1 or int(selected_choice) == terminal_choice:
+    choice = valid_options[selected_option]
+    if choice == terminal_option:
         return value_prompt(input_name, validation)
-    elif int(selected_choice) == picker_choice:
+    elif choice == picker_option:
         return picker_prompt(input_name, validation, picker)
     else:
-        return validation.is_valid(valid_choices[int(selected_choice) - 1])
+        return choice.value if isinstance(choice, Option) else choice
