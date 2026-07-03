@@ -12,7 +12,6 @@ from scad_export.export import (
     export,
 )
 from scad_export.export_config import NamingFormat
-from scad_export.exceptions import MeshRepairError
 from scad_export.exportable import Folder, Image, ImageSize, Model
 
 
@@ -135,68 +134,6 @@ class TestGetExportableArgs:
         assert '--imgsize=200,100' in args
         assert '--render=true' in args
         assert '-D$fs=0.4' not in args
-
-
-class TestExportFileMeshRepair:
-    def _make_config(self, tmp_path):
-        cfg = FakeConfig()
-        cfg.output_directory = str(tmp_path) + '/'
-        return cfg
-
-    def test_calls_repair_when_flag_set_and_export_succeeds(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        with patch('scad_export.export.subprocess.run', return_value=MagicMock(returncode=0)), \
-             patch('scad_export.export.repair_mesh_file') as mock_repair:
-            _export_file('/top', Model('part', mesh_repair=True), cfg)
-        mock_repair.assert_called_once()
-
-    def test_skips_repair_when_flag_false(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        with patch('scad_export.export.subprocess.run', return_value=MagicMock(returncode=0)), \
-             patch('scad_export.export.repair_mesh_file') as mock_repair:
-            _export_file('/top', Model('part', mesh_repair=False), cfg)
-        mock_repair.assert_not_called()
-
-    def test_repair_runs_before_quantity_copies(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        with patch('scad_export.export.subprocess.run', return_value=MagicMock(returncode=0)), \
-             patch('scad_export.export.repair_mesh_file') as mock_repair, \
-             patch('scad_export.export.shutil.copy') as mock_copy:
-            _export_file('/top', Model('part', mesh_repair=True, quantity=3), cfg)
-        assert mock_repair.call_count == 1
-        assert mock_copy.call_count == 2
-
-    def test_repair_failure_reports_as_failed_export(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        with patch('scad_export.export.subprocess.run', return_value=MagicMock(returncode=0)), \
-             patch('scad_export.export.repair_mesh_file', side_effect=MeshRepairError('boom')):
-            output = _export_file('/top', Model('part', mesh_repair=True), cfg)
-        assert 'Failed to export' in output
-        assert 'boom' in output
-
-
-class TestExportUpfrontDependencyCheck:
-    def _make_config(self, tmp_path):
-        cfg = FakeConfig()
-        cfg.output_directory = str(tmp_path) + '/'
-        return cfg
-
-    def test_raises_before_any_subprocess_when_mesh_repair_requested_and_unavailable(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        folder = Folder('top', [Model('a', mesh_repair=True)])
-        with patch('scad_export.export.check_available', side_effect=MeshRepairError('missing')), \
-             patch('scad_export.export.subprocess.run') as mock_run:
-            with pytest.raises(MeshRepairError):
-                export(folder, config=cfg)
-        mock_run.assert_not_called()
-
-    def test_no_check_when_no_model_requests_mesh_repair(self, tmp_path):
-        cfg = self._make_config(tmp_path)
-        folder = Folder('top', [Model('a')])
-        with patch('scad_export.export.check_available') as mock_check, \
-             patch('scad_export.export.subprocess.run', return_value=MagicMock(returncode=0)):
-            export(folder, config=cfg)
-        mock_check.assert_not_called()
 
 
 if __name__ == '__main__':

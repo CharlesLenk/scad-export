@@ -6,6 +6,3 @@ class ConfigError(ScadExportError):
 
 class UserQuitError(ScadExportError):
     pass
-
-class MeshRepairError(ScadExportError):
-    pass
