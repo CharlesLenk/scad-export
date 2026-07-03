@@ -34,10 +34,10 @@ class TestFormatName:
         assert _format_name('my_Widget Name', NamingFormat.NONE) == 'my_Widget Name'
 
     def test_title_case(self):
-        assert _format_name('my_widget_part', NamingFormat.TITLE_CASE) == 'My Widget Part'
+        assert _format_name('my_widget_name', NamingFormat.TITLE_CASE) == 'My Widget Name'
 
     def test_snake_case(self):
-        assert _format_name('My Widget Part', NamingFormat.SNAKE_CASE) == 'my_widget_part'
+        assert _format_name('My Widget Name', NamingFormat.SNAKE_CASE) == 'my_widget_name'
 
 
 class TestFormatPathName:

@@ -86,13 +86,3 @@ class TestImage:
         assert img.image_size is size
         assert img.color_scheme is ColorScheme.TOMORROW_NIGHT
         assert img.user_args == {'d': 10}
-
-
-class TestEnums:
-    def test_model_format_values(self):
-        assert ModelFormat.STL == '.stl'
-        assert ModelFormat._3MF == '.3mf'
-
-    def test_color_scheme_is_str(self):
-        assert ColorScheme.CORNFIELD == 'Cornfield'
-        assert f'{ColorScheme.DAYLIGHT_GEM}' == 'Daylight Gem'

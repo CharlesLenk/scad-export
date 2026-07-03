@@ -12,7 +12,6 @@ class TestIsDirectory:
         assert _is_directory(str(tmp_path))
 
     def test_nonexistent_path_fails(self, tmp_path):
-        # Regression: must actually call is_dir(), not reference the method.
         assert not _is_directory(str(tmp_path / 'does_not_exist'))
 
     def test_file_is_not_a_directory(self, tmp_path):
